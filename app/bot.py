@@ -12,8 +12,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 import asyncio
-from config import API_TOKEN
-from database import init_db, get_user_balance, create_or_get_user
+from app.config import API_TOKEN
+from app.database import init_db, get_user_balance, create_or_get_user
 
 router = Router()
 bot = Bot(token=API_TOKEN)
@@ -36,7 +36,7 @@ async def start_cmd(message: Message, state: FSMContext):
 
 @router.message(F.text == "/shop")
 async def choose_city(message: Message, state: FSMContext):
-    from database import get_db
+    from app.database import get_db
     with get_db() as conn:
         cur = conn.cursor()
         cur.execute("SELECT id, name FROM cities")
@@ -85,7 +85,7 @@ async def select_product(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data.startswith("option_"))
 async def select_option(callback: CallbackQuery, state: FSMContext):
     option_id = int(callback.data.split("_")[1])
-    from database import get_db, get_user_balance
+    from app.database import get_db, get_user_balance
     telegram_id = callback.from_user.id
 
     with get_db() as conn:

@@ -1,7 +1,7 @@
 from flask import Flask, request, abort
 import hmac, hashlib
-from config import WEBHOOK_SECRET
-from database import credit_user_balance
+from app.config import WEBHOOK_SECRET
+from app.database import credit_user_balance
 
 app = Flask(__name__)
 
