@@ -27,9 +27,13 @@ class ShopStates(StatesGroup):
     option = State()
 
 # Start
+@dp.message()
+async def handle_message(message: Message):
+    await message.answer("Hello! I'm alive.")
+
 async def run_bot():
     await dp.start_polling(bot)
-
+    
 @router.message(F.text == "/start")
 async def start_cmd(message: Message, state: FSMContext):
     create_or_get_user(message.from_user.id)
