@@ -49,7 +49,7 @@ pip install -r requirements.txt
 
 3. **Configure bot**
 
-Edit `config.py`:
+Edit `.env`:
 
 ```python
 BOT_TOKEN = "YOUR_BOT_TOKEN"
