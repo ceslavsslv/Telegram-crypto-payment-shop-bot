@@ -1,36 +1,33 @@
 # run.py
-from flask import Flask, request, abort
-from aiogram import Dispatcher, Bot
+import asyncio
+import logging
+from aiogram import Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.webhook.aiohttp_server import setup_application
+from aiohttp import web
+
 from app.config import API_TOKEN, WEBHOOK_URL, WEBHOOK_SECRET_TOKEN
-from app.bot import register_routers
+from app.bot import bot, register_routers
 
-app = Flask(__name__)
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-bot = Bot(token=API_TOKEN, parse_mode="HTML")
-dp = Dispatcher(storage=MemoryStorage())
-register_routers(dp)
+async def on_startup(dispatcher: Dispatcher):
+    logger.info("Registering routers...")
+    register_routers(dispatcher)
+    logger.info("Bot is ready.")
 
-@app.post("/webhook")
-def telegram_webhook():
-    if request.headers.get("X-Telegram-Bot-Api-Secret-Token") != WEBHOOK_SECRET_TOKEN:
-        abort(403)
+def main():
+    dp = Dispatcher(storage=MemoryStorage())
+    dp.startup.register(on_startup)
 
-    update = request.get_data().decode("utf-8")
-    dp.feed_raw_update(bot=bot, update=update)
-    return "", 200
+    app = web.Application()
+    app["bot"] = bot
+    app["dispatcher"] = dp
+
+    setup_application(app, dispatcher=dp, path="/webhook", secret_token=WEBHOOK_SECRET_TOKEN)
+    web.run_app(app, host="0.0.0.0", port=8000)
 
 if __name__ == "__main__":
-    import asyncio
-    from aiogram.client.default import DefaultBotProperties
-    from aiogram.enums import ParseMode
-
-    async def main():
-        await bot.set_webhook(
-            url=WEBHOOK_URL,
-            secret_token=WEBHOOK_SECRET_TOKEN
-        )
-        print("Webhook set.")
-
-    asyncio.run(main())
-    app.run(host="0.0.0.0", port=5000)
+    main()
