@@ -2,5 +2,5 @@ aiogram==3.6.0
 Flask==2.3.3
 requests>=2.31.0
 python-dotenv>=1.0.1
-btcpay-python
+btcpay
 SQLAlchemy>=2.0.0
