@@ -1,7 +1,7 @@
 # handlers/start.py
 from aiogram import Router, types, F
 from aiogram.filters import Command
-from keyboards.common import main_menu_keyboard
+from app.keyboards.common import main_menu_keyboard
 from utils.texts import texts
 from app.database import get_db
 from app.utils.helpers import get_or_create_user
