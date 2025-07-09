@@ -3,7 +3,7 @@ from aiogram import Router, types, F
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from app.database import get_db
 from app.utils.helpers import get_or_create_user, get_product, deduct_balance, add_purchase
-from app.utils.btcpay import create_invoice
+from app.utils.btc import create_invoice
 
 router = Router()
 
