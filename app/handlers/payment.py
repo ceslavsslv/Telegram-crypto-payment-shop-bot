@@ -65,5 +65,4 @@ async def handle_add_funds(message: types.Message):
 async def handle_invoice(callback: types.CallbackQuery):
     amount = float(callback.data.split(":")[1])
     link = create_invoice(amount, metadata={"telegram_id": callback.from_user.id})
-    await callback.message.edit_text(f"💵 Please pay:
-{link}")
+    await callback.message.edit_text(f"💵 Please pay:\n{link}")
