@@ -12,5 +12,7 @@ def register_routers(dispatcher: Dispatcher):
         start.router,
         shop.router,
         payment.router,
-        account.router
+        account.router,
+        support.router,
+        admin.router
     )
