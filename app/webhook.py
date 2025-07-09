@@ -17,7 +17,10 @@ def btcpay_webhook():
     metadata = data.get("metadata", {})
     order_id = metadata.get("orderId")
     telegram_id = metadata.get("telegram_id")
-    amount = float(data.get("amount", 0))
+    try:
+        amount = float(data.get("amount", 0))
+    except (ValueError, TypeError):
+        amount = 0.0
 
     if status == "InvoiceSettled" and telegram_id:
         credit_user_balance(telegram_id, amount)
