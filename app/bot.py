@@ -2,7 +2,7 @@
 from aiogram import Dispatcher, Bot
 from aiogram.fsm.storage.memory import MemoryStorage
 from app.config import API_TOKEN
-from app.handlers import start, shop, payment, account, support, admin
+from app.handlers import start, shop, payment, account, support, admin, referral
 
 bot = Bot(token=API_TOKEN, parse_mode="HTML")
 dp = Dispatcher(storage=MemoryStorage())
@@ -14,5 +14,7 @@ def register_routers(dispatcher: Dispatcher):
         payment.router,
         account.router,
         support.router,
+        admin.router,
+        referral.router,
         admin.router
     )
