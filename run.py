@@ -27,7 +27,7 @@ def main():
     app["dispatcher"] = dp
 
     setup_application(app, dp, path="/webhook", secret_token=WEBHOOK_SECRET_TOKEN)
-    web.run_app(app, host="localhost", port=8000)
+    web.run_app(app, host="0.0.0.0", port=8000)
 
 if __name__ == "__main__":
     main()
