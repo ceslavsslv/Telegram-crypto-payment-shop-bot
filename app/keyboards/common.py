@@ -1,7 +1,7 @@
 # keyboards/common.py
 from aiogram.types import ReplyKeyboardMarkup
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
-from utils.texts import texts
+from app.utils.texts import texts
 
 def main_menu_keyboard(language: str = "en") -> ReplyKeyboardMarkup:
     b = texts["menu_buttons"]
