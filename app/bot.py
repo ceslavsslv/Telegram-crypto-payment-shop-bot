@@ -15,6 +15,5 @@ def register_routers(dispatcher: Dispatcher):
         account.router,
         support.router,
         admin.router,
-        referral.router,
-        admin.router
+        referral.router
     )
