@@ -26,7 +26,7 @@ def main():
     app["bot"] = bot
     app["dispatcher"] = dp
 
-    setup_application(app, dispatcher=dp, path="/webhook", secret_token=WEBHOOK_SECRET_TOKEN)
+    setup_application(app, dp, path="/webhook", secret_token=WEBHOOK_SECRET_TOKEN)
     web.run_app(app, host="0.0.0.0", port=8000)
 
 if __name__ == "__main__":
