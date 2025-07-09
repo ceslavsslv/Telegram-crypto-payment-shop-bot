@@ -1,8 +1,9 @@
 # utils/btcpay.py
 import btcpay
+from btcpay import BTCPayClient
 from app.config import BTCPAY_HOST, BTCPAY_API_KEY, BTCPAY_STORE_ID
 
-client = btcpay.Client(host=BTCPAY_HOST, api_key=BTCPAY_API_KEY)
+client = BTCPayClient(host=BTCPAY_HOST, api_key=BTCPAY_API_KEY)
 
 def create_invoice(amount: float, metadata: dict) -> str:
     try:
