@@ -9,7 +9,7 @@ def create_invoice(amount: float, metadata: dict) -> str:
         invoice = client.create_invoice(
             store_id=BTCPAY_STORE_ID,
             amount=round(amount, 2),
-            currency="USD",
+            currency="EUR",
             metadata=metadata,
         )
         return invoice["checkoutLink"]

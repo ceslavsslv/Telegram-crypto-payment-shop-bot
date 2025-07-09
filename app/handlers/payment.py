@@ -23,11 +23,7 @@ async def handle_buy(callback: types.CallbackQuery):
     builder.button(text="⬅️ Back", callback_data="shop")
     builder.button(text="⏮️ Back to Start", callback_data="start")
 
-    text = f"<b>{product.name}</b>
-
-{product.description}
-
-Price: ${product.price}"
+    text = f"<b>{product.name}</b>\n\n{product.description}\n\nPrice: ${product.price}"
     await callback.message.edit_text(text, reply_markup=builder.as_markup())
 
 @router.callback_query(F.data.startswith("buy_balance:"))
