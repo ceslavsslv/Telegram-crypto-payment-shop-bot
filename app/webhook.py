@@ -13,6 +13,9 @@ def btcpay_webhook():
         abort(403)
 
     data = request.json
+    if not data:
+        abort(400)
+        
     status = data.get("type")
     metadata = data.get("metadata", {})
     order_id = metadata.get("orderId")
