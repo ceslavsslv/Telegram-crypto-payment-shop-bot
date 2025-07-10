@@ -53,7 +53,7 @@ if __name__ == "__main__":
     app.on_shutdown.append(on_shutdown)
 
 async def main():
-    await setup_application(app, dp, path=WEBHOOK_PATH, secret_token=WEBHOOK_SECRET_TOKEN)
+    setup_application(app, dp, path=WEBHOOK_PATH, secret_token=WEBHOOK_SECRET_TOKEN)
     logger.info(f"🌐 Starting server at {HOST}:{PORT}")
     runner = web.AppRunner(app)
     await runner.setup()
