@@ -52,16 +52,6 @@ if __name__ == "__main__":
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
 
-async def main():
     setup_application(app, dp, path=WEBHOOK_PATH, secret_token=WEBHOOK_SECRET_TOKEN)
     logger.info(f"🌐 Starting server at {HOST}:{PORT}")
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, host=HOST, port=PORT)
-    await site.start()
-    while True:
-        await asyncio.sleep(3600)  # Keep running forever
-
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(main())
+    web.run_app(app, host=HOST, port=PORT)
