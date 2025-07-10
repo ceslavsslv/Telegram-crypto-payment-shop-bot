@@ -19,7 +19,7 @@ HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", 8000))
 
 # Webhook config
-WEBHOOK_PATH = "/webhook"
+WEBHOOK_PATH = f"/webhook"
 WEBHOOK_URL_FULL = f"{WEBHOOK_URL}{WEBHOOK_PATH}"
 
 # Configure logging

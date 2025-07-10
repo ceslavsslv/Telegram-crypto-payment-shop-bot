@@ -172,6 +172,13 @@ sudo systemctl restart telegram-bot
 
 # Kill manually (if pid file exists)
 ./stop_bot.sh
+
+# Tail live log 
+tail -f bot.log
+
+#Show last 50 lines
+tail -n 50 bot.log
+
 ```
 
 ---
