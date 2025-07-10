@@ -1,19 +1,33 @@
 import asyncio
 import logging
+import os
 from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler
-from config import TOKEN, WEBHOOK_SECRET_TOKEN, WEBHOOK_PATH, HOST, PORT
+from dotenv import load_dotenv
 
+# Load .env
+load_dotenv()
+
+# Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Load from env
+TOKEN = os.getenv("BOT_TOKEN")
+WEBHOOK_SECRET_TOKEN = os.getenv("WEBHOOK_SECRET_TOKEN")
+WEBHOOK_PATH = os.getenv("WEBHOOK_PATH", "/webhook/")
+HOST = os.getenv("HOST", "0.0.0.0")
+PORT = int(os.getenv("PORT", 5000))
+
+# Init bot + dispatcher
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
+# Setup web app
 app = web.Application()
 
-# ✅ Manually register the webhook handler
+# ✅ Manually bind webhook route
 app.router.add_post(WEBHOOK_PATH, SimpleRequestHandler(dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET_TOKEN))
 
 async def main():
@@ -22,7 +36,6 @@ async def main():
     await runner.setup()
     site = web.TCPSite(runner, host=HOST, port=PORT)
     await site.start()
-
     logger.info(f"✅ Webhook set at {WEBHOOK_PATH}")
     while True:
         await asyncio.sleep(3600)
