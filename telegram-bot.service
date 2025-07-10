@@ -1,0 +1,15 @@
+[Unit]
+Description=Telegram Crypto Shop Bot
+After=network.target
+
+[Service]
+User=debian
+WorkingDirectory=/home/debian/Telegram-crypto-payment-shop-bot-main
+EnvironmentFile=/home/debian/Telegram-crypto-payment-shop-bot-main/.env
+Environment="PATH=/home/debian/duckdns/venv/bin"
+ExecStart=/home/debian/duckdns/venv/bin/python run.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
