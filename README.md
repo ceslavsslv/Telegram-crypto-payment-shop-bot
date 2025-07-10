@@ -46,6 +46,9 @@ nano .env
 
 # Initialize the database
 python init_db.py
+
+# Make scripts executable
+chmod +x start_bot.sh stop_bot.sh
 ```
 
 ---
@@ -55,7 +58,7 @@ python init_db.py
 ```ini
 API_TOKEN=your_telegram_bot_token
 ADMINS=123456789
-WEBHOOK_URL=https://yourdomain.com/webhook
+WEBHOOK_URL=https://yourdomain.com  # Full path is added automatically
 WEBHOOK_SECRET_TOKEN=supersecret
 
 HOST=0.0.0.0
@@ -87,6 +90,36 @@ source venv/bin/activate
 ```
 
 Bot logs will be written to `bot.log` and its PID to `bot.pid`.
+
+---
+
+## 🔗 Setting the Webhook Manually
+
+If the webhook is not active or your bot doesn’t respond, set it manually:
+
+```bash
+python set_webhook.py
+```
+
+Create `set_webhook.py`:
+```python
+import asyncio
+from aiogram import Bot
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+API_TOKEN = os.getenv("API_TOKEN")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+
+async def main():
+    bot = Bot(token=API_TOKEN)
+    await bot.set_webhook(f"{WEBHOOK_URL}/webhook")
+    print(f"✅ Webhook set to: {WEBHOOK_URL}/webhook")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
 
 ---
 
