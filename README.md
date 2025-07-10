@@ -1,150 +1,156 @@
-# 🛍️ Telegram Crypto Shop Bot (Aiogram v3 + BTCPay + Flask)
+# 🛍️ Telegram Crypto Shop Bot (Aiogram v3 + BTCPay)
 
-A dynamic, crypto-powered Telegram shop bot written in **Python** using **Aiogram v3**, **BTCPay Server**, **SQLite**, and **Flask**. Supports:
-
-- 🔗 Self-hosted BTCPay-based crypto balance system
-- 🏙️ Dynamic catalog (Cities → Categories → Products)
-- 🛒 Simple purchase flow with Telegram inline buttons
-- 🧾 Purchase instructions sent after order
-- 🌐 Language switching (🇷🇺 / 🇺🇸)
-- 👨‍💻 Admin panel via bot for managing products, cities, and categories (minimal)
+A dynamic, crypto-powered Telegram shop bot using **Python**, **Aiogram v3**, **SQLite**, and **BTCPay Server**. Fully self-hosted with balance-based purchases, product selection, and city-specific catalogs.
 
 ---
 
 ## 🚀 Features
 
-✅ Telegram webhook via Flask  
-✅ Aiogram v3 async handlers  
-✅ Inline navigation (city → product → amount)  
-✅ User balance stored securely in SQLite  
-✅ BTCPay Server integration for top-up QR/invoice generation  
-✅ Inline admin panel for managing catalog  
-✅ Language switcher with persistent settings
+- 🔗 Crypto payments via BTCPay Server
+- 🏙️ City → Product → Quantity navigation
+- 💳 Balance top-up and purchase system
+- 🧾 Instant delivery after purchase
+- 🌐 Multi-language support (`en`, `ru`)
+- 👤 Admin panel inside Telegram for managing catalog
+- 🖥️ Self-hosted with webhook
 
 ---
 
 ## 🧰 Requirements
 
 - Python 3.10+
-- A running **BTCPay Server** instance
+- A working BTCPay Server instance
 - Telegram Bot Token
-- Flask (for webhook delivery)
+- SQLite or PostgreSQL
 
 ---
 
 ## 🛠️ Installation
 
-1. **Clone the repo**
-
 ```bash
-git clone https://github.com/yourname/telegram-crypto-shop-bot.git
-cd telegram-crypto-shop-bot
-```
+# Clone the repository
+cd ~
+git clone https://github.com/yourname/Telegram-crypto-payment-shop-bot.git
+cd Telegram-crypto-payment-shop-bot
 
-2. **Install dependencies**
+# Create a virtual environment
+python3 -m venv venv
+source venv/bin/activate
 
-```bash
+# Install dependencies
 pip install -r requirements.txt
+
+# Create and edit your .env file
+cp .env.example .env
+nano .env
+
+# Initialize the database
+python init_db.py
 ```
 
-3. **Configure bot**
+---
 
-Edit `.env`:
+## 📁 .env Configuration Example
 
-```python
-BOT_TOKEN = "YOUR_BOT_TOKEN"
-BTCPAY_URL = "https://your.btcpayserver.tld"
-BTCPAY_API_KEY = "api-key-here"
-BTCPAY_STORE_ID = "store-id"
-WEBHOOK_SECRET = "yourwebhooksecret"
-WEBHOOK_PATH = "/webhook/telegram"
-DOMAIN = "https://your.domain.tld"  # Public domain for webhook
+```ini
+API_TOKEN=your_telegram_bot_token
+ADMINS=123456789
+WEBHOOK_URL=https://yourdomain.com/webhook
+WEBHOOK_SECRET_TOKEN=supersecret
+
+HOST=0.0.0.0
+PORT=8000
+
+DATABASE_URL=sqlite:///shop.db
+DB_PATH=shop.db
+
+BTCPAY_HOST=https://your.btcpay.url
+BTCPAY_API_KEY=your-api-key
+BTCPAY_STORE_ID=your-store-id
+
+LANGUAGES=en,ru
 ```
 
-4. **Run bot + Flask webhook**
+---
+
+## ▶️ Running the Bot
 
 ```bash
-python bot.py
+# Activate your environment
+source venv/bin/activate
+
+# Start using script
+./start_bot.sh
+
+# Stop using script
+./stop_bot.sh
+```
+
+Bot logs will be written to `bot.log` and its PID to `bot.pid`.
+
+---
+
+## 🔄 Run 24/7 using systemd
+
+Create a systemd service file:
+
+```bash
+sudo nano /etc/systemd/system/telegram-bot.service
+```
+
+Paste:
+```ini
+[Unit]
+Description=Telegram Crypto Shop Bot
+After=network.target
+
+[Service]
+User=your-linux-user
+WorkingDirectory=/home/your-linux-user/Telegram-crypto-payment-shop-bot
+EnvironmentFile=/home/your-linux-user/Telegram-crypto-payment-shop-bot/.env
+ExecStart=/home/your-linux-user/Telegram-crypto-payment-shop-bot/venv/bin/python run.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then:
+```bash
+sudo systemctl daemon-reexec
+sudo systemctl enable telegram-bot
+sudo systemctl start telegram-bot
 ```
 
 ---
 
-## ⚙️ Project Structure
+## 🛑 If Things Go Wrong
 
-```text
-.
-├── bot.py                  # Launches Flask + Aiogram bot
-├── config.py               # Configs
-├── database.py             # SQLite models + helpers
-├── btc_pay.py              # BTCPay client logic
-├── handlers/
-│   ├── start.py            # /start, /shop, menu
-│   ├── shop.py             # Product flow
-│   ├── language.py         # Language change
-│   ├── admin.py            # Simple admin commands
-├── keyboards/
-│   └── menu.py             # Main menu keyboard
-├── requirements.txt
-└── README.md
+```bash
+# View logs
+journalctl -u telegram-bot.service -e
+
+# Stop the service
+sudo systemctl stop telegram-bot
+
+# Restart the bot
+sudo systemctl restart telegram-bot
+
+# Kill manually (if pid file exists)
+./stop_bot.sh
 ```
 
 ---
 
-## 📦 Dynamic Catalog Design
+## 📬 Telegram Commands (if implemented)
 
-- Admin can add:
-  - Cities
-  - Categories
-  - Products (per city + category)
-
-Handled via inline menus or database prefill. Admin access protected via Telegram ID.
-
----
-
-## 🔐 BTCPay Integration
-
-- Balance-based system
-- Users top-up via invoice (QR code or URL)
-- Invoice status polled or webhook-based update
-- After payment, user balance is increased
-- Orders subtract balance
+- `/start` – show menu
+- `/shop` – browse products
+- `/balance` – view balance
+- `/addfunds` – top up crypto
+- `/account` – view purchases
+- `/support` – contact support
+- `/language` – switch language
 
 ---
-
-## 📲 Telegram Flow Example
-
-1. User joins, presses `🛍 Shopping`
-2. Selects city → category → product → amount
-3. Chooses `💰 Buy with Balance`
-4. Gets order confirmation + instructions
-5. Support and language tools available anytime
-
----
-
-## 📌 Notes
-
-- Project is fully async (Aiogram v3)
-- You can deploy on **Render**, **Fly.io**, or any VPS
-- Use `ngrok` for local testing if needed
-
----
-
-## 🧑‍💻 Admin Commands (in-bot)
-
-- `/add_city` – Add city
-- `/add_category` – Add product category
-- `/add_product` – Add product with name, price, stock
-
-More coming soon.
-
----
-
-## 📄 License
-
-MIT License. Use and modify freely, but please don’t abuse this template.
-
----
-
-## 💬 Contact
-
-Built with ❤️ by [YourName]. Want help or custom build? Open an issue or contact me directly.

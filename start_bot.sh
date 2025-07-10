@@ -4,10 +4,10 @@ set -euo pipefail
 # === Determine project directory dynamically ===
 # Uses the directory where this script resides
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VENV_ACTIVATE="/home/debian/telegram/Telegram-crypto-payment-shop-bot/venv/bin/activate"   # adjust if your venv is elsewhere
+VENV_ACTIVATE="$PROJECT_DIR/venv/bin/activate"
 
 # === Change into project directory ===
-cd "/home/debian/telegram/Telegram-crypto-payment-shop-bot"
+cd "$PROJECT_DIR"
 
 # === Load environment variables ===
 if [[ -f .env ]]; then
