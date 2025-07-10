@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+import asyncio
 from dotenv import load_dotenv
 from aiohttp import web
 from aiogram import Bot, Dispatcher
@@ -51,6 +52,14 @@ if __name__ == "__main__":
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)
 
-    setup_application(app, dp, path=WEBHOOK_PATH, secret_token=WEBHOOK_SECRET_TOKEN)
+    async def main():
+    await setup_application(app, dp, path=WEBHOOK_PATH, secret_token=WEBHOOK_SECRET_TOKEN)
     logger.info(f"🌐 Starting server at {HOST}:{PORT}")
-    web.run_app(app, host=HOST, port=PORT)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, host=HOST, port=PORT)
+    await site.start()
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
