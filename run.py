@@ -1,11 +1,13 @@
 import os
+import sys
 import logging
 from dotenv import load_dotenv
 from aiohttp import web
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.webhook.aiohttp_server import setup_application
-from aiogram.types import Message
+# Ensure project root is in Python path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Load environment variables from .env
 load_dotenv()

@@ -7,7 +7,7 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV_ACTIVATE="/home/debian/telegram/Telegram-crypto-payment-shop-bot/venv/bin/activate"   # adjust if your venv is elsewhere
 
 # === Change into project directory ===
-cd "$PROJECT_DIR"
+cd "/home/debian/telegram/Telegram-crypto-payment-shop-bot"
 
 # === Load environment variables ===
 if [[ -f .env ]]; then
@@ -16,6 +16,9 @@ else
   echo "❌ .env file not found in $PROJECT_DIR" >&2
   exit 1
 fi
+
+# Export PYTHONPATH so handlers package is found
+export PYTHONPATH="$PROJECT_DIR"
 
 # === Activate virtualenv ===
 if [[ -f "$VENV_ACTIVATE" ]]; then
