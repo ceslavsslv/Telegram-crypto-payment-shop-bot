@@ -59,6 +59,8 @@ async def main():
     await runner.setup()
     site = web.TCPSite(runner, host=HOST, port=PORT)
     await site.start()
+    while True:
+        await asyncio.sleep(3600)  # Keep running forever
 
 if __name__ == "__main__":
     import asyncio
