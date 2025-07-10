@@ -37,6 +37,13 @@ register_routers(dp)
 
 # Startup: set webhook
 async def on_startup(app: web.Application):
+    async def log_request_middleware(app, handler):
+        async def middleware_handler(request):
+            print(f"Incoming request: {request.method} {request.path}")
+            return await handler(request)
+        return middleware_handler
+    
+    app.middlewares.append(log_request_middleware)
     await bot.set_webhook(WEBHOOK_URL_FULL, secret_token=WEBHOOK_SECRET_TOKEN)
     logger.info(f"✅ Webhook set at {WEBHOOK_URL_FULL}")
 
