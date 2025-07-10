@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load from env
-TOKEN = os.getenv("BOT_TOKEN")
+TOKEN = os.getenv("API_TOKEN")
 WEBHOOK_SECRET_TOKEN = os.getenv("WEBHOOK_SECRET_TOKEN")
 WEBHOOK_PATH = os.getenv("WEBHOOK_PATH", "/webhook/")
 HOST = os.getenv("HOST", "0.0.0.0")
