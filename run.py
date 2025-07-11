@@ -49,6 +49,7 @@ async def on_shutdown(app: web.Application):
 # Manual webhook set (if run directly)
 async def manual_set_webhook():
     await bot.set_webhook(url=WEBHOOK_URL_FULL)
+    await bot.session.close()
     print(f"✅ Webhook manually set at {WEBHOOK_URL_FULL}")
 
 # Start web server
