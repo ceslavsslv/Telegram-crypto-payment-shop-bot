@@ -20,7 +20,7 @@ HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", 8000))
 
 # Webhook config
-WEBHOOK_PATH = os.getenv("WEBHOOK_PATH")
+WEBHOOK_PATH = os.getenv("WEBHOOK_PATH", "/")
 WEBHOOK_URL_FULL = f"{WEBHOOK_URL}{WEBHOOK_PATH}"
 
 # Configure logging
@@ -62,5 +62,6 @@ if __name__ == "__main__":
         app.on_shutdown.append(on_shutdown)
 
         setup_application(app, dp, path=WEBHOOK_PATH)
+        logger.info(f"📍 Webhook path registered at {WEBHOOK_PATH}")
         logger.info(f"🌐 Starting server at {HOST}:{PORT}")
         web.run_app(app, host=HOST, port=PORT)
