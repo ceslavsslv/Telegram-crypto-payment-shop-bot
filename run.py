@@ -2,8 +2,6 @@ import os
 import sys
 import logging
 import asyncio
-from flask import Flask, request, abort
-from aiogram.types import Update
 from dotenv import load_dotenv
 from aiohttp import web
 from aiogram import Bot, Dispatcher
@@ -36,23 +34,6 @@ dp = Dispatcher(storage=MemoryStorage())
 # Register routers via central function
 from app.bot import register_routers
 register_routers(dp)
-
-# Flask app for webhook
-app = Flask(__name__)
-
-@app.route('/', methods=['POST'])
-def telegram_webhook():
-    if request.headers.get("content-type") == "application/json":
-        json_string = request.get_data().decode("utf-8")
-        update = Update.model_validate_json(json_string)
-        asyncio.run(dp.feed_update(bot, update))
-        return "OK"
-    else:
-        abort(403)
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8000))
-    app.run(host='0.0.0.0', port=port)
 
 # Startup: set webhook
 async def on_startup(app: web.Application):
