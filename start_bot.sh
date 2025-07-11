@@ -17,9 +17,6 @@ else
   exit 1
 fi
 
-# Set webhook
-python run.py set_webhook
-
 # Export PYTHONPATH so handlers package is found
 export PYTHONPATH="$PROJECT_DIR"
 
@@ -31,6 +28,9 @@ else
   echo "❌ Cannot find venv activate script at $VENV_ACTIVATE" >&2
   exit 1
 fi
+
+# Set webhook
+python run.py set_webhook
 
 # === Start bot in background ===
 nohup python run.py > bot.log 2>&1 &
