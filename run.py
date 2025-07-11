@@ -15,7 +15,7 @@ load_dotenv()
 
 API_TOKEN = os.getenv("API_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")        # e.g., https://yourdomain.com
-WEBHOOK_SECRET_TOKEN = os.getenv("WEBHOOK_SECRET_TOKEN", "supersecret")
+WEBHOOK_SECRET_TOKEN = os.getenv("WEBHOOK_SECRET_TOKEN")
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", 8000))
 
