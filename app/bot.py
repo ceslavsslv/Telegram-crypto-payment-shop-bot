@@ -13,5 +13,5 @@ def register_routers(dp: Dispatcher):
         support.router,
         admin.router,
         referral.router,
-        dp.include_router(debug.router)
+        debug.router
     )
