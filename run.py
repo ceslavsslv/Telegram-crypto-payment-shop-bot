@@ -18,7 +18,7 @@ load_dotenv()
 API_TOKEN = os.getenv("API_TOKEN")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 HOST = os.getenv("HOST", "0.0.0.0")
-PORT = int(os.getenv("PORT", 8000))
+PORT = int(os.getenv("PORT", 8443))
 
 # Webhook config
 WEBHOOK_PATH = os.getenv("WEBHOOK_PATH", "/")
@@ -61,9 +61,11 @@ if __name__ == "__main__":
         app = web.Application()
         app.on_startup.append(on_startup)
         app.on_shutdown.append(on_shutdown)
-
-        setup_application(app, dp, path=WEBHOOK_PATH)
-        web.run_app(app, host=HOST, port=PORT)
         logger.info(f"📍 Webhook path registered at {WEBHOOK_PATH}")
         logger.info(f"🌐 Starting server at {HOST}:{PORT}")
+
+        
+        setup_application(app, dp, path=WEBHOOK_PATH)
+        web.run_app(app, host=HOST, port=PORT)
+       
         
