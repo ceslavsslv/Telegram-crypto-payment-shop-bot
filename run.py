@@ -32,8 +32,8 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
 # Register routers via central function
-from app.bot import register_routers
-register_routers(dp)
+from app import bot
+bot.register_routers(dp)
 
 # Startup: set webhook
 async def on_startup(app: web.Application):
