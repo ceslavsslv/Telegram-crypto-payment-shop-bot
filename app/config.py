@@ -10,8 +10,7 @@ ADMINS = list(map(int, os.getenv("ADMINS", "").split(",")))
 
 # Webhook settings
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-WEBHOOK_SECRET_TOKEN = os.getenv("WEBHOOK_SECRET_TOKEN")
-WEBHOOK_SECRET = WEBHOOK_SECRET_TOKEN
+WEBHOOK_PATH = os.getenv("WEBHOOK_PATH")
 
 # Hosting settings
 HOST = os.getenv("HOST", "0.0.0.0")
