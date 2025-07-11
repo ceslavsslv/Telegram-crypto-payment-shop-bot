@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import asyncio
+import aiogram
 from dotenv import load_dotenv
 from aiohttp import web
 from aiogram import Bot, Dispatcher
@@ -62,6 +63,7 @@ if __name__ == "__main__":
         app.on_shutdown.append(on_shutdown)
 
         setup_application(app, dp, path=WEBHOOK_PATH)
+        web.run_app(app, host=HOST, port=PORT)
         logger.info(f"📍 Webhook path registered at {WEBHOOK_PATH}")
         logger.info(f"🌐 Starting server at {HOST}:{PORT}")
-        web.run_app(app, host=HOST, port=PORT)
+        
