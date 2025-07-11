@@ -1,10 +1,39 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Activate virtual environment if you use one
-# source venv/bin/activate
+# === Determine project directory dynamically ===
+# Uses the directory where this script resides
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VENV_ACTIVATE="$PROJECT_DIR/venv/bin/activate"
 
-echo "🚀 Starting Flask Telegram Webhook Server..."
-export API_TOKEN="your_token_here"
-export PORT=8000  # Ensure this matches NGINX proxy
+# === Change into project directory ===
+cd "$PROJECT_DIR"
 
-python flask_webhook_server.py
+# === Load environment variables ===
+if [[ -f .env ]]; then
+  export $(grep -v '^#' .env | xargs)
+else
+  echo "❌ .env file not found in $PROJECT_DIR" >&2
+  exit 1
+fi
+
+# Export PYTHONPATH so handlers package is found
+export PYTHONPATH="$PROJECT_DIR"
+
+# === Activate virtualenv ===
+if [[ -f "$VENV_ACTIVATE" ]]; then
+  # shellcheck disable=SC1090
+  source "$VENV_ACTIVATE"
+else
+  echo "❌ Cannot find venv activate script at $VENV_ACTIVATE" >&2
+  exit 1
+fi
+
+# Set webhook
+python run.py set_webhook
+
+# === Start bot in background ===
+nohup python run.py > bot.log 2>&1 &
+echo $! > bot.pid
+
+echo "✅ Bot started (PID $(cat bot.pid)) – logs in bot.log"
