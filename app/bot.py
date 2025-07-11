@@ -15,3 +15,4 @@ def register_routers(dp: Dispatcher):
         referral.router,
         debug.router
     )
+    dp.include_router(debug.router)
