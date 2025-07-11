@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import asyncio
+import aiohttp
 from dotenv import load_dotenv
 from aiohttp import web
 from aiogram import Bot, Dispatcher
