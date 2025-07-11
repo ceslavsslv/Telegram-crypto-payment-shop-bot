@@ -1,5 +1,5 @@
 # bot.py
-from aiogram import Dispatcher, Bot
+from aiogram import Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from app.config import API_TOKEN
 from app.handlers import start, shop, payment, account, support, admin, referral
