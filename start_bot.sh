@@ -17,6 +17,9 @@ else
   exit 1
 fi
 
+# Set webhook
+python run.py set_webhook
+
 # Export PYTHONPATH so handlers package is found
 export PYTHONPATH="$PROJECT_DIR"
 
