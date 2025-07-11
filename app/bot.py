@@ -2,7 +2,7 @@
 from aiogram import Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from app.config import API_TOKEN
-from app.handlers import start, shop, payment, account, support, admin, referral
+from app.handlers import start, shop, payment, account, support, admin, referral, debug
 
 def register_routers(dispatcher: Dispatcher):
     dispatcher.include_routers(
@@ -12,5 +12,6 @@ def register_routers(dispatcher: Dispatcher):
         account.router,
         support.router,
         admin.router,
-        referral.router
+        referral.router,
+        debug.router
     )
