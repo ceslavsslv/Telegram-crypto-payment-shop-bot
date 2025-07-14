@@ -25,12 +25,7 @@ PORT = int(getenv("PORT"))
 WEBHOOK_PATH = getenv("WEBHOOK_PATH")
 WEBHOOK_URL_FULL = f"{WEBHOOK_URL}{WEBHOOK_PATH}"
 
-# Initialize bot and dispatcher
-dp = Dispatcher(storage=MemoryStorage())
 router = Router()
-
-# Register routers via central function
-register_routers(dp)
 
 # Startup: set webhook
 async def on_startup(bot: Bot):
@@ -46,7 +41,7 @@ async def on_shutdown(bot: Bot):
 # Start web server
 def main():
     dp = Dispatcher(storage=MemoryStorage())
-    dp.include_router(router)
+    register_routers(dp)
     dp.startup.register(on_startup)
     bot = Bot(token=API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     app = web.Application()
