@@ -1,71 +1,70 @@
-import os
+import os #nevajag
 import sys
 import logging
-import asyncio
-import aiogram
-from dotenv import load_dotenv
+from os import getenv
+from dotenv import load_dotenv #nevajag
 from aiohttp import web
-from aiogram import Bot, Dispatcher
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.webhook.aiohttp_server import setup_application
+from aiogram import Bot, Dispatcher, Router
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
+from aiogram.types import Message
+from aiogram.utils.markdown import hbold
+from aiogram.types import Update
+from aiogram.fsm.storage.memory import MemoryStorage #nevajag
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
 # Ensure project root is in Python path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Load environment variables from .env
-load_dotenv()
 
-API_TOKEN = os.getenv("API_TOKEN")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-HOST = os.getenv("HOST", "0.0.0.0")
-PORT = int(os.getenv("PORT", 8443))
-
-# Webhook config
-WEBHOOK_PATH = os.getenv("WEBHOOK_PATH", "/")
+API_TOKEN = getenv("API_TOKEN")
+WEBHOOK_URL = getenv("WEBHOOK_URL")
+HOST = getenv("HOST")
+PORT = int(getenv("PORT"))
+WEBHOOK_PATH = getenv("WEBHOOK_PATH")
 WEBHOOK_URL_FULL = f"{WEBHOOK_URL}{WEBHOOK_PATH}"
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 # Initialize bot and dispatcher
-bot = Bot(token=API_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
+router = Router()
 
 # Register routers via central function
 from app.bot import register_routers
 register_routers(dp)
 
 # Startup: set webhook
-async def on_startup(app: web.Application):
-    await bot.set_webhook(url=WEBHOOK_URL_FULL)  # ← removed secret_token
-    logger.info(f"✅ Webhook set at {WEBHOOK_URL_FULL}")
+async def on_startup(bot: Bot):
+    await bot.set_webhook(WEBHOOK_URL_FULL)
+    print(f"✅ Webhook set at {WEBHOOK_URL_FULL}")
 
 # Shutdown: remove webhook and close
-async def on_shutdown(app: web.Application):
+async def on_shutdown(bot: Bot):
     await bot.delete_webhook()
     await bot.session.close()
-    logger.info("🛑 Webhook deleted and bot session closed.")
-
-# Manual webhook set (if run directly)
-async def manual_set_webhook():
-    await bot.set_webhook(url=WEBHOOK_URL_FULL)
-    await bot.session.close()
-    print(f"✅ Webhook manually set at {WEBHOOK_URL_FULL}")
+    print(f"🛑 Webhook deleted and bot session closed.")
 
 # Start web server
-if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "set_webhook":
-        asyncio.run(manual_set_webhook())
-    else:
-        app = web.Application()
-        app.on_startup.append(on_startup)
-        app.on_shutdown.append(on_shutdown)
-        logger.info(f"📍 Webhook path registered at {WEBHOOK_PATH}")
-        logger.info(f"🌐 Starting server at {HOST}:{PORT}")
+def main():
+    dp = Dispatcher(storage=MemoryStorage())
+    dp.include_router(router)
+    dp.startup.register(on_startup)
+    bot = Bot(token=API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    app = web.Application()
+    webhook_requests_handler = SimpleRequestHandler(
+        dispatcher=dp,
+        bot=bot, 
+    )
+    webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+    setup_application(app, dp, bot=bot)
+    web.run_app(app, host=HOST, port=PORT)
+    app.on_startup.append(on_startup)
+    app.on_shutdown.append(on_shutdown)
 
-        
-        setup_application(app, dp, path=WEBHOOK_PATH)
-        web.run_app(app, host=HOST, port=PORT)
-       
+    logging.info(f"👉 WEBHOOK_PATH: {WEBHOOK_PATH}")
+    logging.info(f"👉 WEBHOOK_URL_FULL: {WEBHOOK_URL_FULL}")
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    main()
         
