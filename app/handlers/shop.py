@@ -3,10 +3,11 @@ from aiogram import Router, types, F
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from app.database import get_db
 from app.utils.helpers import get_or_create_user, get_cities, get_products_by_city
+from app.keyboards.common import main_menu_keyboard, get_menu_button_values
 
 router = Router()
 
-@router.message(F.text == "🌍 Shop")
+@router.message(F.text.in_(get_menu_button_values("shopping")))
 async def handle_shop(message: types.Message):
     db = next(get_db())
     user = get_or_create_user(db, telegram_id=message.from_user.id)

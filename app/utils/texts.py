@@ -16,6 +16,6 @@ texts = {
         "support": {"en": "☎️ Support", "ru": "☎️ Поддержка"},
         "news": {"en": "📰 News", "ru": "📰 Новости"},
         "referral": {"en": "🔷 Referral system", "ru": "🔷 Реферальная система"},
-        "language": {"en": "🇷🇺 Change the language", "ru": "🇺🇸 Сменить язык"}
+        "language": {"en": "🇷🇺 Change language", "ru": "🇺🇸 Сменить язык"}
     }
 }

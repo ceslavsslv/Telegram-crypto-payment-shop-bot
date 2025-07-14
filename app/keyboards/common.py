@@ -16,3 +16,6 @@ def main_menu_keyboard(language: str = "en") -> ReplyKeyboardMarkup:
     builder.button(text=b["language"][language])
 
     return builder.adjust(2, 2, 3).as_markup(resize_keyboard=True)
+
+def get_menu_button_values(key: str) -> list[str]:
+    return list(texts["menu_buttons"].get(key, {}).values())

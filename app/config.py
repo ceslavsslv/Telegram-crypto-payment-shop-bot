@@ -13,12 +13,12 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 WEBHOOK_PATH = os.getenv("WEBHOOK_PATH")
 
 # Hosting settings
-HOST = os.getenv("HOST", "0.0.0.0")
-PORT = int(os.getenv("PORT", 8000))
+HOST = os.getenv("HOST")
+PORT = int(os.getenv("PORT"))
 
 # Database
 DB_URL = os.getenv("DATABASE_URL")
-DB_PATH = os.getenv("DB_PATH", "shop.db")
+DB_PATH = os.getenv("DB_PATH")
 
 # BTCPay server
 BTCPAY_HOST = os.getenv("BTCPAY_HOST")
