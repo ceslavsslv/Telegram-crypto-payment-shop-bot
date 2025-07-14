@@ -3,7 +3,7 @@ from aiogram import Router, types, F
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from app.database import get_db
 from app.utils.helpers import get_or_create_user, get_cities, get_products_by_city
-from app.keyboards.common import main_menu_keyboard, get_menu_button_values
+from app.keyboards.common import get_menu_button_values
 
 router = Router()
 
