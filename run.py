@@ -2,7 +2,7 @@ import os #nevajag
 import sys
 import logging
 from os import getenv
-from dotenv import load_dotenv #nevajag
+from app.bot import register_routers
 from aiohttp import web
 from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
@@ -30,7 +30,6 @@ dp = Dispatcher(storage=MemoryStorage())
 router = Router()
 
 # Register routers via central function
-from app.bot import register_routers
 register_routers(dp)
 
 # Startup: set webhook
