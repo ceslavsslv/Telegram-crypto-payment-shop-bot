@@ -6,7 +6,7 @@ from app.utils.helpers import get_or_create_user
 
 router = Router()
 
-@router.message(F.text.in_(get_menu_button_values("language")))
+@router.message(F.text.in_(get_menu_button_values("account")))
 async def handle_account(message: types.Message):
     try:
         db = next(get_db())
