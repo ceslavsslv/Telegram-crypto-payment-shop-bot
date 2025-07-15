@@ -13,3 +13,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Direct session helper for non-generator usage (Aiogram, scripts)
+def get_session():
+    return SessionLocal()
