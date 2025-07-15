@@ -4,6 +4,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from app.database import get_db
 from app.utils.helpers import get_or_create_user, get_product, deduct_balance, add_purchase
 from app.utils.btcpay import create_invoice
+from app.keyboards.common import get_menu_button_values
 
 router = Router()
 
@@ -47,7 +48,7 @@ async def handle_balance_purchase(callback: types.CallbackQuery):
 
     await callback.message.edit_text(f"✅ Purchase successful!\n\n{info}")
 
-@router.message(F.text == "💶 Add funds")
+@router.message(F.text.in_(get_menu_button_values("add_funds")))
 async def handle_add_funds(message: types.Message):
     db = next(get_db())
     user = get_or_create_user(db, telegram_id=message.from_user.id)
