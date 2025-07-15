@@ -1,11 +1,15 @@
 # handlers/admin.py
-from aiogram import Router, types
+from aiogram import Router, types, F
 from aiogram.filters import Command
 from app.config import ADMINS
 from app.database import engine
 from app.models import Base
+from app.keyboards.admin_menu import get_admin_keyboard
 
 router = Router()
+
+def is_admin(user_id: int) -> bool:
+    return user_id in ADMINS
 
 @router.message(Command("admin"))
 async def admin_panel(message: types.Message):
@@ -13,7 +17,7 @@ async def admin_panel(message: types.Message):
         await message.answer("Access denied.")
         return
 
-    await message.answer("👮 Admin panel (stub):\nYou can later add controls for products, cities, and users.")
+    await message.answer("👤 Welcome Admin. Choose action:", reply_markup=get_admin_keyboard())
 
 @router.message(Command("syncdb"))
 async def sync_db(message: types.Message):

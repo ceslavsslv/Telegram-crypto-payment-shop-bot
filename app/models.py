@@ -36,6 +36,31 @@ class Product(Base):
 
     city = relationship("City", back_populates="products")
 
+class Area(Base):
+    __tablename__ = "areas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    city_id = Column(Integer, ForeignKey("cities.id"))
+    product_id = Column(Integer, ForeignKey("products.id"))
+    is_active = Column(Boolean, default=True)
+
+    city = relationship("City")
+    product = relationship("Product")
+    amounts = relationship("Amount", back_populates="area")
+
+
+class Amount(Base):
+    __tablename__ = "amounts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    area_id = Column(Integer, ForeignKey("areas.id"))
+    label = Column(String, nullable=False)  # e.g., '0.5g', '1g'
+    price = Column(Float, nullable=False)
+    is_active = Column(Boolean, default=True)
+
+    area = relationship("Area", back_populates="amounts")
+
 class Purchase(Base):
     __tablename__ = "purchases"
 
