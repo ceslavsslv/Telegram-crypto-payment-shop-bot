@@ -15,3 +15,4 @@ class AdminState(StatesGroup):
     amount_area = State()
     amount_label = State()
     amount_price = State()
+    editing_note = State()
