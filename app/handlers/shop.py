@@ -1,23 +1,17 @@
 # handlers/shop.py
 from aiogram import Router, types, F
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from sqlalchemy.orm import Session
 from app.database import get_db, get_session
 from app.utils.helpers import get_or_create_user, get_cities, get_products_by_city
 from app.keyboards.common import get_menu_button_values
 from app.models import City, Product, Area, Amount
+from app.states.shop import ShopState
 
 router = Router()
-
-class ShopState(StatesGroup):
-    city = State()
-    product = State()
-    area = State()
-    amount = State()
 
 def create_inline_keyboard(buttons):
     return InlineKeyboardMarkup(inline_keyboard=[
