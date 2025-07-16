@@ -24,11 +24,11 @@ async def handle_shop(message: types.Message):
     user = get_or_create_user(db, telegram_id=message.from_user.id)
 
     cities = get_cities(db)
-    builder = InlineKeyboardBuilder(row_width=1)
-    for city in cities:
-        builder.button(text=city.name, callback_data=f"shop_city:{city.id}")
-
-    await message.answer("Select your city:", reply_markup=builder.as_markup())
+    buttons = [
+        [InlineKeyboardButton(text=city.name, callback_data=f"shop_city:{city.id}")]
+        for city in cities
+    ]
+    await message.answer("Select your city:", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
 
 @router.callback_query(F.data.startswith("shop_city:"))
 async def handle_city(callback: types.CallbackQuery):
