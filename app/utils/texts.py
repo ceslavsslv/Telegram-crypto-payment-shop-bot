@@ -35,9 +35,9 @@ texts = {
             }
     },
     "account_info": {
-        "en": "👤 Balance: ${balance:.2f}\nUser ID: {user_id}\nTotal purchases: {total} EUR\n{history}",
-        "ru": "👤 Баланс: ${balance:.2f}\nID пользователя: {user_id}\nВсего покупок: {total} EUR\n{history}",
-        "lv": "👤 Bilance: ${balance:.2f}\nLietotāja ID: {user_id}\nKopējie pirkumi: {total} EUR\n{history}"
+        "en": "👤 Balance: EUR{balance:.2f}\nUser ID: {user_id}\nTotal purchases: {total} EUR\n{history}",
+        "ru": "👤 Баланс: EUR{balance:.2f}\nID пользователя: {user_id}\nВсего покупок: {total} EUR\n{history}",
+        "lv": "👤 Bilance: EUR{balance:.2f}\nLietotāja ID: {user_id}\nKopējie pirkumi: {total} EUR\n{history}"
     },
     "history_entry": {
         "en": "🛒 {product} - ${price} ({timestamp})",
@@ -50,9 +50,9 @@ texts = {
         "lv": "Vēl nav veikti pirkumi."
     },
     "ref_info": {
-        "en": "🔗 You invited {count} users.\nEarned: ${earned:.2f}",
-        "ru": "🔗 Вы пригласили {count} пользователей.\nЗаработано: ${earned:.2f}",
-        "lv": "🔗 Tu uzaicināji {count} lietotājus.\nNopelnīts: ${earned:.2f}"
+        "en": "🔗 You invited {count} users.\nEarned: EUR{earned:.2f}",
+        "ru": "🔗 Вы пригласили {count} пользователей.\nЗаработано: EUR{earned:.2f}",
+        "lv": "🔗 Tu uzaicināji {count} lietotājus.\nNopelnīts: EUR{earned:.2f}"
     }
 }
 

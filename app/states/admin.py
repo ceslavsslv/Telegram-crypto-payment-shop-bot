@@ -4,6 +4,7 @@ from aiogram.fsm.state import StatesGroup, State
 
 class AdminState(StatesGroup):
     choose_action = State()
+    
     city_name = State()
 
     product_city = State()
@@ -15,4 +16,11 @@ class AdminState(StatesGroup):
     amount_area = State()
     amount_label = State()
     amount_price = State()
+
     editing_note = State()
+
+    refund_user_id = State()
+    balance_user_id = State()
+    balance_amount = State()
+
+    lookup_user = State()

@@ -206,3 +206,95 @@ async def save_note(message: types.Message, state: FSMContext):
             db.commit()
     await state.clear()
     await message.answer("✅ Saved post-purchase message.")
+
+@router.message(AdminState.choose_action, F.text == "🔄 Refund User")
+async def ask_user_id_for_refund(message: Message, state: FSMContext):
+    await message.answer("Enter User ID to refund:")
+    await state.set_state(AdminState.refund_user_id)
+
+@router.message(AdminState.refund_user_id)
+async def process_refund(message: Message, state: FSMContext):
+    user_id = int(message.text)
+    with get_session() as db:
+        from app.models import User
+        user = db.query(User).filter_by(telegram_id=user_id).first()
+        if not user:
+            await message.answer("❌ User not found.")
+        else:
+            user.balance += 10.0  # Or use state to specify amount
+            db.commit()
+            await message.answer(f"✅ Refunded $10 to user {user_id}.")
+    await state.set_state(AdminState.choose_action)
+
+@router.message(AdminState.choose_action, F.text == "💰 Edit Balance")
+async def ask_balance_user_id(message: Message, state: FSMContext):
+    await message.answer("Enter User ID to change balance:")
+    await state.set_state(AdminState.balance_user_id)
+
+@router.message(AdminState.balance_user_id)
+async def ask_balance_amount(message: Message, state: FSMContext):
+    await state.update_data(user_id=int(message.text))
+    await message.answer("Enter amount to add (negative to subtract):")
+    await state.set_state(AdminState.balance_amount)
+
+@router.message(AdminState.balance_amount)
+async def update_user_balance(message: Message, state: FSMContext):
+    data = await state.get_data()
+    user_id = data.get("user_id")
+    amount = float(message.text)
+    with get_session() as db:
+        from app.models import User
+        user = db.query(User).filter_by(telegram_id=user_id).first()
+        if not user:
+            await message.answer("❌ User not found.")
+        else:
+            user.balance += amount
+            db.commit()
+            await message.answer(f"✅ Updated balance by {amount:+.2f}. New: ${user.balance:.2f}")
+    await state.set_state(AdminState.choose_action)
+
+@router.message(AdminState.choose_action, F.text == "🔍 Lookup User")
+async def lookup_user_prompt(message: Message, state: FSMContext):
+    await message.answer("Enter Telegram User ID to lookup:")
+    await state.set_state(AdminState.lookup_user)
+
+@router.message(AdminState.lookup_user)
+async def lookup_user_data(message: Message, state: FSMContext):
+    user_id = int(message.text)
+    with get_session() as db:
+        from app.models import User, Purchase
+        user = db.query(User).filter_by(telegram_id=user_id).first()
+        if not user:
+            await message.answer("❌ User not found.")
+        else:
+            purchases = db.query(Purchase).filter_by(user_id=user.id).count()
+            await message.answer(
+                f"👤 User ID: {user.telegram_id}\nBalance: ${user.balance:.2f}\nLanguage: {user.language}\nPurchases: {purchases}"
+            )
+    await state.set_state(AdminState.choose_action)
+
+@router.message(AdminState.choose_action, F.text == "📦 View Stock")
+async def view_stock_summary(message: Message, state: FSMContext):
+    with get_session() as db:
+        from app.models import Product
+        products = db.query(Product).all()
+        if not products:
+            await message.answer("❌ No products found.")
+            return
+        lines = []
+        for p in products:
+            lines.append(f"{p.name}: Stock = {p.stock} | Price = ${p.price}")
+        await message.answer("📦 Product Inventory:\n\n" + "\n".join(lines))
+
+@router.message(AdminState.choose_action, F.text == "📊 Bot Stats")
+async def show_bot_stats(message: Message, state: FSMContext):
+    with get_session() as db:
+        from app.models import User, Purchase, Product
+        users = db.query(User).count()
+        purchases = db.query(Purchase).count()
+        total_sales = sum(p.product.price for p in db.query(Purchase).all() if p.product)
+        products = db.query(Product).count()
+
+    await message.answer(
+        f"📊 Stats:\n\n👥 Users: {users}\n🛍 Purchases: {purchases}\n📦 Products: {products}\n💵 Revenue: ${total_sales:.2f}"
+    )
