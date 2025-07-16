@@ -49,6 +49,35 @@ async def add_city_save(message: Message, state: FSMContext):
     await message.answer("✅ City added.", reply_markup=get_admin_keyboard())
     await state.set_state(AdminState.choose_action)
 
+# ➕ Add Product Flow
+
+@router.message(AdminState.choose_action, F.text == "➕ Add Product")
+async def add_product_prompt_city(message: Message, state: FSMContext):
+    with get_session() as db:
+        cities = db.query(City).all()
+    if not cities:
+        await message.answer("❌ No cities found. Add a city first.")
+        return
+    msg = "Select city ID:\n" + "\n".join(f"{c.id}. {c.name}" for c in cities)
+    await message.answer(msg)
+    await state.set_state(AdminState.product_city)
+
+@router.message(AdminState.product_city)
+async def add_product_prompt_name(message: Message, state: FSMContext):
+    await state.update_data(city_id=int(message.text))
+    await message.answer("📝 Enter product name:")
+    await state.set_state(AdminState.product_name)
+
+@router.message(AdminState.product_name)
+async def add_product_save(message: Message, state: FSMContext):
+    data = await state.get_data()
+    with get_session() as db:
+        db.add(Product(name=message.text.strip(), city_id=data["city_id"]))
+        db.commit()
+    await state.clear()
+    await message.answer("✅ Product added.", reply_markup=get_admin_keyboard())
+    await state.set_state(AdminState.choose_action)
+
 #new ➕ Add Area Flow
 
 @router.message(AdminState.choose_action, F.text == "➕ Add Area")
