@@ -1,11 +1,11 @@
 # handlers/payment.py
 from aiogram import Router, types, F
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from app.database import get_db
+from app.database import get_db, get_session
 from app.utils.helpers import get_or_create_user, get_product, deduct_balance, add_purchase
 from app.utils.btcpay import create_invoice
 from app.keyboards.common import get_menu_button_values
-from app.models import Product
+from app.models import Product, Amount
 
 router = Router()
 
@@ -58,6 +58,11 @@ async def handle_balance_purchase(callback: types.CallbackQuery):
     add_purchase(db, user.id, product.id, info)
 
     await callback.message.edit_text(f"✅ Purchase successful!\n\n{info}")
+
+    with get_session() as db_session:
+        amount = db_session.query(Amount).filter_by(product_id=product.id).first()
+        if amount and amount.purchase_note:
+            info += f"\n\n📦 {amount.purchase_note}"
 
 @router.message(F.text.in_(get_menu_button_values("add_funds")))
 async def handle_add_funds(message: types.Message):

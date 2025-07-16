@@ -184,3 +184,25 @@ async def refund_buyer(message: Message, state: FSMContext):
 async def add_balance(message: Message, state: FSMContext):
     await message.answer("Send the user ID and amount to add (e.g. 123456789 10.00).")
     await state.set_state(AdminState.add_balance)
+
+@router.callback_query(F.data.startswith("edit_note:"))
+async def edit_purchase_note(callback: types.CallbackQuery, state: FSMContext):
+    amount_id = int(callback.data.split(":")[1])
+    await state.update_data(amount_id=amount_id)
+    await state.set_state(AdminState.editing_note)
+    await callback.message.answer("📝 Send new post-purchase message (or type 'cancel'):")
+
+@router.message(AdminState.editing_note)
+async def save_note(message: types.Message, state: FSMContext):
+    if message.text.lower() == "cancel":
+        await state.clear()
+        return await message.answer("❌ Cancelled.")
+    data = await state.get_data()
+    amount_id = data.get("amount_id")
+    with get_session() as db:
+        amount = db.query(Amount).filter_by(id=amount_id).first()
+        if amount:
+            amount.purchase_note = message.text
+            db.commit()
+    await state.clear()
+    await message.answer("✅ Saved post-purchase message.")

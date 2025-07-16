@@ -18,44 +18,15 @@ def create_inline_keyboard(buttons):
         [InlineKeyboardButton(text=btn['label'], callback_data=btn['data'])] for btn in buttons
     ])
 
-@router.message(F.text.in_(get_menu_button_values("shopping")))
-async def handle_shop(message: types.Message):
-    db = next(get_db())
-    user = get_or_create_user(db, telegram_id=message.from_user.id)
-
-    cities = get_cities(db)
-    buttons = [
-        [InlineKeyboardButton(text=city.name, callback_data=f"shop_city:{city.id}")]
-        for city in cities
-    ]
-    await message.answer("Select your city:", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
-
-@router.callback_query(F.data.startswith("shop_city:"))
-async def handle_city(callback: types.CallbackQuery):
-    db = next(get_db())
-    city_id = int(callback.data.split(":")[1])
-    products = get_products_by_city(db, city_id)
-
-    if not products:
-        await callback.message.edit_text("No products available in this city.")
-        return
-
-    builder = InlineKeyboardBuilder()
-    buttons = [
-        [InlineKeyboardButton(text=f"{product.name}", callback_data=f"buy:{product.id}")]
-        for product in products
-    ]
-    await callback.message.edit_text("Select a product:", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
-
 #new
 
-@router.message(F.text.lower() == "shopping")
+@router.message(F.text.in_(get_menu_button_values("shopping")))
 async def start_shopping(message: Message, state: FSMContext):
     with get_session() as db:
         cities = db.query(City).filter_by(is_active=True).all()
     buttons = [{"label": city.name, "data": f"city:{city.id}"} for city in cities]
     await state.set_state(ShopState.city)
-    await message.answer("🌆 Choose your city:", reply_markup=create_inline_keyboard(buttons()))
+    await message.answer("🌆 Choose your city:", reply_markup=create_inline_keyboard(buttons))
 
 @router.callback_query(F.data.startswith("city:"))
 async def choose_city(callback: CallbackQuery, state: FSMContext):
