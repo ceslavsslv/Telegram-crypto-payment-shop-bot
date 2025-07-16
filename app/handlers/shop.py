@@ -24,7 +24,7 @@ async def handle_shop(message: types.Message):
     user = get_or_create_user(db, telegram_id=message.from_user.id)
 
     cities = get_cities(db)
-    builder = InlineKeyboardBuilder()
+    builder = InlineKeyboardBuilder(row_width=1)
     for city in cities:
         builder.button(text=city.name, callback_data=f"shop_city:{city.id}")
 
