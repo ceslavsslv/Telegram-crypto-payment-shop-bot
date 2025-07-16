@@ -41,10 +41,11 @@ async def handle_city(callback: types.CallbackQuery):
         return
 
     builder = InlineKeyboardBuilder()
-    for product in products:
-        builder.button(text=f"{product.name}", callback_data=f"buy:{product.id}")
-
-    await callback.message.edit_text("Select a product:", reply_markup=builder.as_markup())
+    buttons = [
+        [InlineKeyboardButton(text=f"{product.name}", callback_data=f"buy:{product.id}")]
+        for product in products
+    ]
+    await callback.message.edit_text("Select a product:", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
 
 #new
 
