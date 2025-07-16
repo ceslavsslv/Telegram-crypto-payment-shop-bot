@@ -16,11 +16,12 @@ def is_admin(user_id: int) -> bool:
     return user_id in ADMINS
 
 @router.message(Command("admin"))
-async def admin_panel(message: types.Message):
+async def admin_panel(message: types.Message, state: FSMContext):
     if message.from_user.id not in ADMINS:
         await message.answer("Access denied.")
         return
 
+    await state.set_state(AdminState.choose_action)
     await message.answer("👤 Welcome Admin. Choose action:", reply_markup=get_admin_keyboard())
 
 @router.message(Command("syncdb"))
