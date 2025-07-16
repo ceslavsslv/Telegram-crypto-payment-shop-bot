@@ -5,6 +5,7 @@ from app.database import get_db
 from app.utils.helpers import get_or_create_user, get_product, deduct_balance, add_purchase
 from app.utils.btcpay import create_invoice
 from app.keyboards.common import get_menu_button_values
+from app.models import Product
 
 router = Router()
 
@@ -15,8 +16,14 @@ async def handle_buy(callback: types.CallbackQuery):
     user = get_or_create_user(db, telegram_id=callback.from_user.id)
     product = get_product(db, product_id)
 
-    if not product or product.stock < 1:
-        await callback.answer("Product unavailable.", show_alert=True)
+    product = db.query(Product).filter(Product.id == product_id).first()
+
+    if not product:
+        await callback.answer("❌ Product not found.", show_alert=True)
+        return
+
+    if hasattr(product, "stock") and product.stock is not None and product.stock < 1:
+        await callback.answer("❌ Product out of stock.", show_alert=True)
         return
 
     builder = InlineKeyboardBuilder()
@@ -35,11 +42,15 @@ async def handle_balance_purchase(callback: types.CallbackQuery):
     product = get_product(db, product_id)
 
     if not product:
-        await callback.answer("Product not found.", show_alert=True)
+        await callback.answer("❌ Product not found.", show_alert=True)
+        return
+
+    if hasattr(product, "stock") and product.stock is not None and product.stock < 1:
+        await callback.answer("❌ Product out of stock.", show_alert=True)
         return
 
     if not deduct_balance(db, user, product.price):
-        await callback.answer("Insufficient balance.", show_alert=True)
+        await callback.answer("❌ Insufficient balance.", show_alert=True)
         return
 
     # In real use, you'd assign a product license/code or delivery info

@@ -31,7 +31,7 @@ class Product(Base):
     name = Column(String)
     description = Column(Text)
     price = Column(Float)
-    stock = Column(Integer)
+    stock = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)
 
     city = relationship("City", back_populates="products")
@@ -55,7 +55,7 @@ class Amount(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     area_id = Column(Integer, ForeignKey("areas.id"))
-    label = Column(String, nullable=False)  # e.g., '0.5g', '1g'
+    label = Column(String, nullable=False)
     price = Column(Float, nullable=False)
     is_active = Column(Boolean, default=True)
 
