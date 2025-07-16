@@ -43,10 +43,13 @@ async def add_city_prompt(message: Message, state: FSMContext):
 async def add_city_save(message: Message, state: FSMContext):
     city_name = message.text.strip()
     with get_session() as db:
-        db.add(City(name=city_name))
-        db.commit()
-    await state.clear()
-    await message.answer("✅ City added.", reply_markup=get_admin_keyboard())
+        existing = db.query(City).filter(City.name == city_name).first()
+        if existing:
+            await message.answer("⚠️ City already exists.")
+        else:
+            db.add(City(name=city_name, is_active=True))
+            db.commit()
+            await message.answer("✅ City added.")
     await state.set_state(AdminState.choose_action)
 
 # ➕ Add Product Flow
@@ -90,7 +93,19 @@ async def add_area_prompt_product(message: Message, state: FSMContext):
 
 @router.message(AdminState.area_product)
 async def add_area_prompt_name(message: Message, state: FSMContext):
-    await state.update_data(product_id=int(message.text))
+    try:
+        product_id = int(message.text)
+    except ValueError:
+        await message.answer("❌ Invalid product ID. Please enter a number.")
+        return
+
+    with get_session() as db:
+        product = db.query(Product).filter(Product.id == product_id).first()
+        if not product:
+            await message.answer("❌ Product not found. Try again.")
+            return
+
+    await state.update_data(product_id=product_id)
     await message.answer("📝 Enter area/district name:")
     await state.set_state(AdminState.area_name)
 
@@ -116,7 +131,19 @@ async def add_amount_prompt_area(message: Message, state: FSMContext):
 
 @router.message(AdminState.amount_area)
 async def add_amount_prompt_label(message: Message, state: FSMContext):
-    await state.update_data(area_id=int(message.text))
+    try:
+        area_id = int(message.text)
+    except ValueError:
+        await message.answer("❌ Invalid area ID. Please enter a number.")
+        return
+
+    with get_session() as db:
+        area = db.query(Area).filter(Area.id == area_id).first()
+        if not area:
+            await message.answer("❌ Area not found. Try again.")
+            return
+
+    await state.update_data(area_id=area_id)
     await message.answer("📝 Enter amount label (e.g., 0.5g):")
     await state.set_state(AdminState.amount_label)
 
@@ -128,11 +155,17 @@ async def add_amount_prompt_price(message: Message, state: FSMContext):
 
 @router.message(AdminState.amount_price)
 async def add_amount_save(message: Message, state: FSMContext):
+    try:
+        price = float(message.text.replace(",", "."))
+    except ValueError:
+        await message.answer("❌ Invalid price. Please enter a numeric value.")
+        return
+
     data = await state.get_data()
     with get_session() as db:
-        db.add(Amount(area_id=data["area_id"], label=data["label"], price=float(message.text)))
+        db.add(Amount(area_id=data["area_id"], label=data["label"], price=price))
         db.commit()
+
     await state.clear()
     await message.answer("✅ Amount added.", reply_markup=get_admin_keyboard())
     await state.set_state(AdminState.choose_action)
-
