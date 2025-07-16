@@ -51,6 +51,9 @@ class Area(Base):
 
 
 class Amount(Base):
+    purchase_note = Column(String, nullable=True)
+
+    
     __tablename__ = "amounts"
 
     id = Column(Integer, primary_key=True, index=True)

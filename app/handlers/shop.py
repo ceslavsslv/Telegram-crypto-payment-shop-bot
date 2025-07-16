@@ -14,7 +14,7 @@ from app.states.shop import ShopState
 router = Router()
 
 def create_inline_keyboard(buttons):
-    return InlineKeyboardMarkup(inline_keyboard=[
+    return InlineKeyboardMarkup(row_width=1, inline_keyboard=[
         [InlineKeyboardButton(text=btn['label'], callback_data=btn['data'])] for btn in buttons
     ])
 
@@ -42,7 +42,7 @@ async def handle_city(callback: types.CallbackQuery):
 
     builder = InlineKeyboardBuilder()
     for product in products:
-        builder.button(text=f"{product.name} - ${product.price}", callback_data=f"buy:{product.id}")
+        builder.button(text=f"{product.name}", callback_data=f"buy:{product.id}")
 
     await callback.message.edit_text("Select a product:", reply_markup=builder.as_markup())
 
@@ -54,7 +54,7 @@ async def start_shopping(message: Message, state: FSMContext):
         cities = db.query(City).filter_by(is_active=True).all()
     buttons = [{"label": city.name, "data": f"city:{city.id}"} for city in cities]
     await state.set_state(ShopState.city)
-    await message.answer("🌆 Choose your city:", reply_markup=create_inline_keyboard(buttons))
+    await message.answer("🌆 Choose your city:", reply_markup=create_inline_keyboard(buttons()))
 
 @router.callback_query(F.data.startswith("city:"))
 async def choose_city(callback: CallbackQuery, state: FSMContext):
@@ -62,7 +62,7 @@ async def choose_city(callback: CallbackQuery, state: FSMContext):
     await state.update_data(city_id=city_id)
     with get_session() as db:
         products = db.query(Product).filter_by(city_id=city_id).all()
-    buttons = [{"label": p.name, "data": f"product:{p.id}"} for p in products]
+    buttons = [{"label": f"{p.name}", "data": f"product:{p.id}"} for p in products]
     await state.set_state(ShopState.product)
     await callback.message.edit_text("🛍 Choose a product:", reply_markup=create_inline_keyboard(buttons))
 
