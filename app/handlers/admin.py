@@ -72,7 +72,10 @@ async def add_product_prompt_city(message: Message, state: FSMContext):
         await message.answer("❌ No cities found. Add a city first.")
         return
     msg = "Select city ID:\n" + "\n".join(f"{c.id}. {c.name}" for c in cities)
-    await message.answer(msg)
+    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
     await state.set_state(AdminState.product_city)
 
 @router.message(AdminState.product_city)
@@ -101,7 +104,10 @@ async def add_area_prompt_product(message: Message, state: FSMContext):
     with get_session() as db:
         products = db.query(Product).all()
     msg = "Select product ID:\n" + "\n".join(f"{p.id}. {p.name}" for p in products)
-    await message.answer(msg)
+    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
     await state.set_state(AdminState.area_product)
 
 @router.message(AdminState.area_product)
@@ -142,7 +148,10 @@ async def add_amount_prompt_area(message: Message, state: FSMContext):
     with get_session() as db:
         areas = db.query(Area).all()
     msg = "Select area ID:\n" + "\n".join(f"{a.id}. {a.name}" for a in areas)
-    await message.answer(msg)
+    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
     await state.set_state(AdminState.amount_area)
 
 @router.message(AdminState.amount_area)
@@ -191,7 +200,11 @@ async def add_amount_save(message: Message, state: FSMContext):
 
 @router.message(F.text == "📝 Edit Purchase Info")
 async def edit_purchase_note(message: Message, state: FSMContext):
-    await message.answer("Send the purchase info you'd like to set (this will show after a purchase).")
+    msg = "Send the purchase info you'd like to set (this will show after a purchase)."
+    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
     await state.set_state(AdminState.edit_purchase_note)
 
 @router.callback_query(F.data.startswith("edit_note:"))
