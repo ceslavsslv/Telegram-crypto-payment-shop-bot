@@ -175,16 +175,6 @@ async def edit_purchase_note(message: Message, state: FSMContext):
     await message.answer("Send the purchase info you'd like to set (this will show after a purchase).")
     await state.set_state(AdminState.edit_purchase_note)
 
-@router.message(F.text == "💸 Refund Buyer")
-async def refund_buyer(message: Message, state: FSMContext):
-    await message.answer("Send the user ID and refund amount (e.g. 123456789 5.00).")
-    await state.set_state(AdminState.refund)
-
-@router.message(F.text == "💰 Add Balance")
-async def add_balance(message: Message, state: FSMContext):
-    await message.answer("Send the user ID and amount to add (e.g. 123456789 10.00).")
-    await state.set_state(AdminState.add_balance)
-
 @router.callback_query(F.data.startswith("edit_note:"))
 async def edit_purchase_note(callback: types.CallbackQuery, state: FSMContext):
     amount_id = int(callback.data.split(":")[1])

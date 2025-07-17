@@ -10,6 +10,7 @@ from app.utils.helpers import get_or_create_user, get_cities, get_products_by_ci
 from app.keyboards.common import get_menu_button_values
 from app.models import City, Product, Area, Amount
 from app.states.shop import ShopState
+from app.utils import texts
 
 router = Router()
 
@@ -24,9 +25,12 @@ def create_inline_keyboard(buttons):
 async def start_shopping(message: Message, state: FSMContext):
     with get_session() as db:
         cities = db.query(City).filter_by(is_active=True).all()
+    if not cities:
+        await message.answer(texts.NO_CITIES["en"])
+        return
     buttons = [{"label": city.name, "data": f"city:{city.id}"} for city in cities]
     await state.set_state(ShopState.city)
-    await message.answer("🌆 Choose your city:", reply_markup=create_inline_keyboard(buttons))
+    await message.answer(texts.CHOOSE_CITY["en"], reply_markup=create_inline_keyboard(buttons))
 
 @router.callback_query(F.data.startswith("city:"))
 async def choose_city(callback: CallbackQuery, state: FSMContext):

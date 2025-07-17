@@ -55,6 +55,78 @@ texts = {
         "lv": "🔗 Tu uzaicināji {count} lietotājus.\nNopelnīts: EUR{earned:.2f}"
     }
 }
+NO_CITIES = {
+    "en": "No cities available at the moment.",
+    "lv": "Pagaidām nav pieejamu pilsētu.",
+    "ru": "На данный момент нет доступных городов."
+}
+
+NO_PRODUCTS = {
+    "en": "No products available in this city.",
+    "lv": "Šajā pilsētā nav pieejamu produktu.",
+    "ru": "В этом городе нет доступных товаров."
+}
+
+NO_AREAS = {
+    "en": "No districts available for this product.",
+    "lv": "Nav pieejamu rajonu šim produktam.",
+    "ru": "Для этого продукта нет доступных районов."
+}
+
+NO_AMOUNTS = {
+    "en": "No product amounts available in this area.",
+    "lv": "Šajā rajonā nav pieejamu produktu daudzumu.",
+    "ru": "В этом районе нет доступных вариантов товара."
+}
+
+CHOOSE_CITY = {
+    "en": "🌆 Choose your city:",
+    "lv": "🌆 Izvēlies pilsētu:",
+    "ru": "🌆 Выберите город:"
+}
+
+CHOOSE_PRODUCT = {
+    "en": "🛍 Choose a product:",
+    "lv": "🛍 Izvēlies produktu:",
+    "ru": "🛍 Выберите товар:"
+}
+
+CHOOSE_AREA = {
+    "en": "📍 Choose an area/district:",
+    "lv": "📍 Izvēlies rajonu:",
+    "ru": "📍 Выберите район:"
+}
+
+CHOOSE_AMOUNT = {
+    "en": "💸 Choose amount:",
+    "lv": "💸 Izvēlies summu:",
+    "ru": "💸 Выберите сумму:"
+}
+
+CONFIRM_PURCHASE = {
+    "en": "✅ Confirm your purchase or navigate:",
+    "lv": "✅ Apstiprini pirkumu vai pārvietojies:",
+    "ru": "✅ Подтвердите покупку или выберите действие:"
+}
+
+BUY_BY_BALANCE = {
+    "en": "✅ Buy by Balance",
+    "lv": "✅ Pirkt ar bilanci",
+    "ru": "✅ Купить с баланса"
+}
+
+BACK = {
+    "en": "🔙 Back",
+    "lv": "🔙 Atpakaļ",
+    "ru": "🔙 Назад"
+}
+
+MAIN_MENU = {
+    "en": "🏠 Main Menu",
+    "lv": "🏠 Galvenā izvēlne",
+    "ru": "🏠 Главное меню"
+}
+
 
 def t(key: str, lang: str = "en", **kwargs):
     lang_data = texts.get(key)
