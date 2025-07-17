@@ -3,8 +3,10 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 def get_admin_keyboard():
     buttons = [
-        ["➕ Add City", "➕ Add Product"],
-        ["➕ Add Area", "➕ Add Amount"],
+        ["➕ Add City", "🗑 Remove City"],
+        ["➕ Add Product", "🗑 Remove Product"],
+        ["➕ Add Area", "🗑 Remove Area"],
+        ["➕ Add Amount", "🗑 Remove Amount"],
         ["📝 Edit Notes", "📦 View Stock"],
         ["💰 Edit Balance", "🔄 Refund User"],
         ["🔍 Lookup User", "📊 Bot Stats"],

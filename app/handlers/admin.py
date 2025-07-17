@@ -288,3 +288,121 @@ async def show_bot_stats(message: Message, state: FSMContext):
     await message.answer(
         f"📊 Stats:\n\n👥 Users: {users}\n🛍 Purchases: {purchases}\n📦 Products: {products}\n💵 Revenue: ${total_sales:.2f}"
     )
+
+@router.message(AdminState.choose_action, F.text == "🗑 Remove City")
+async def remove_city_prompt(message: Message, state: FSMContext):
+    with get_session() as db:
+        cities = db.query(City).all()
+    if not cities:
+        await message.answer("⚠️ No cities found.")
+        return
+    msg = "📋 Enter city ID to remove:\n" + "\n".join(f"{c.id}. {c.name}" for c in cities)
+    await message.answer(msg)
+    await state.set_state(AdminState.remove_city)
+
+@router.message(AdminState.remove_city)
+async def remove_city_execute(message: Message, state: FSMContext):
+    try:
+        city_id = int(message.text.strip())
+    except ValueError:
+        await message.answer("❌ Invalid ID. Please enter a number.")
+        return
+
+    with get_session() as db:
+        city = db.query(City).filter_by(id=city_id).first()
+        if city:
+            db.delete(city)
+            db.commit()
+            await message.answer("✅ City removed.")
+        else:
+            await message.answer("❌ City not found.")
+    await state.set_state(AdminState.choose_action)
+
+@router.message(AdminState.choose_action, F.text == "🗑 Remove Product")
+async def remove_product_prompt(message: Message, state: FSMContext):
+    with get_session() as db:
+        products = db.query(Product).all()
+    if not products:
+        await message.answer("⚠️ No products found.")
+        return
+    msg = "📋 Enter product ID to remove:\n" + "\n".join(f"{p.id}. {p.name}" for p in products)
+    await message.answer(msg)
+    await state.set_state(AdminState.remove_product)
+
+@router.message(AdminState.remove_product)
+async def remove_product_execute(message: Message, state: FSMContext):
+    try:
+        product_id = int(message.text.strip())
+    except ValueError:
+        await message.answer("❌ Invalid ID. Please enter a number.")
+        return
+
+    with get_session() as db:
+        product = db.query(Product).filter_by(id=product_id).first()
+        if product:
+            db.delete(product)
+            db.commit()
+            await message.answer("✅ Product removed.")
+        else:
+            await message.answer("❌ Product not found.")
+    await state.set_state(AdminState.choose_action)
+
+@router.message(AdminState.choose_action, F.text == "🗑 Remove Area")
+async def remove_area_prompt(message: Message, state: FSMContext):
+    with get_session() as db:
+        areas = db.query(Area).all()
+    if not areas:
+        await message.answer("⚠️ No areas found.")
+        return
+    msg = "📋 Enter area ID to remove:\n" + "\n".join(f"{a.id}. {a.name}" for a in areas)
+    await message.answer(msg)
+    await state.set_state(AdminState.remove_area)
+
+@router.message(AdminState.remove_area)
+async def remove_area_execute(message: Message, state: FSMContext):
+    try:
+        area_id = int(message.text.strip())
+    except ValueError:
+        await message.answer("❌ Invalid ID. Please enter a number.")
+        return
+
+    with get_session() as db:
+        area = db.query(Area).filter_by(id=area_id).first()
+        if area:
+            db.delete(area)
+            db.commit()
+            await message.answer("✅ Area removed.")
+        else:
+            await message.answer("❌ Area not found.")
+    await state.set_state(AdminState.choose_action)
+
+@router.message(AdminState.choose_action, F.text == "🗑 Remove Amount")
+async def remove_amount_prompt(message: Message, state: FSMContext):
+    with get_session() as db:
+        amounts = db.query(Amount).all()
+    if not amounts:
+        await message.answer("⚠️ No amounts found.")
+        return
+    msg = "📋 Enter amount ID to remove:\n" + "\n".join(
+        f"{a.id}. {a.amount}€ (Area ID: {a.area_id})" for a in amounts
+    )
+    await message.answer(msg)
+    await state.set_state(AdminState.remove_amount)
+
+@router.message(AdminState.remove_amount)
+async def remove_amount_execute(message: Message, state: FSMContext):
+    try:
+        amount_id = int(message.text.strip())
+    except ValueError:
+        await message.answer("❌ Invalid ID. Please enter a number.")
+        return
+
+    with get_session() as db:
+        amount = db.query(Amount).filter_by(id=amount_id).first()
+        if amount:
+            db.delete(amount)
+            db.commit()
+            await message.answer("✅ Amount removed.")
+        else:
+            await message.answer("❌ Amount not found.")
+    await state.set_state(AdminState.choose_action)

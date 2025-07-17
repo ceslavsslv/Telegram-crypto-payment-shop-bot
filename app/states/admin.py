@@ -24,3 +24,8 @@ class AdminState(StatesGroup):
     balance_amount = State()
 
     lookup_user = State()
+
+    remove_city = State()
+    remove_product = State()
+    remove_area = State()
+    remove_amount = State()
