@@ -1,6 +1,6 @@
 # handlers/admin.py
 from aiogram import Router, types, F
-from aiogram.types import Message
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import Command
 from app.states.admin import AdminState
@@ -36,7 +36,10 @@ async def sync_db(message: types.Message):
 
 @router.message(AdminState.choose_action, F.text == "➕ Add City")
 async def add_city_prompt(message: Message, state: FSMContext):
-    await message.answer("🏙 Enter city name:")
+    await message.answer("🏙 Enter city name:", reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
     await state.set_state(AdminState.city_name)
 
 @router.message(AdminState.city_name)
@@ -68,7 +71,10 @@ async def add_product_prompt_city(message: Message, state: FSMContext):
 @router.message(AdminState.product_city)
 async def add_product_prompt_name(message: Message, state: FSMContext):
     await state.update_data(city_id=int(message.text))
-    await message.answer("📝 Enter product name:")
+    await message.answer("📝 Enter product name:", reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
     await state.set_state(AdminState.product_name)
 
 @router.message(AdminState.product_name)
@@ -106,7 +112,10 @@ async def add_area_prompt_name(message: Message, state: FSMContext):
             return
 
     await state.update_data(product_id=product_id)
-    await message.answer("📝 Enter area/district name:")
+    await message.answer("📝 Enter area/district name:", reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
     await state.set_state(AdminState.area_name)
 
 @router.message(AdminState.area_name)
@@ -144,7 +153,10 @@ async def add_amount_prompt_label(message: Message, state: FSMContext):
             return
 
     await state.update_data(area_id=area_id)
-    await message.answer("📝 Enter amount label (e.g., 0.5g):")
+    await message.answer("📝 Enter amount label (1peace, 10EUR, etc.):", reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
     await state.set_state(AdminState.amount_label)
 
 @router.message(AdminState.amount_label)
@@ -297,7 +309,10 @@ async def remove_city_prompt(message: Message, state: FSMContext):
         await message.answer("⚠️ No cities found.")
         return
     msg = "📋 Enter city ID to remove:\n" + "\n".join(f"{c.id}. {c.name}" for c in cities)
-    await message.answer(msg)
+    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
     await state.set_state(AdminState.remove_city)
 
 @router.message(AdminState.remove_city)
@@ -326,7 +341,10 @@ async def remove_product_prompt(message: Message, state: FSMContext):
         await message.answer("⚠️ No products found.")
         return
     msg = "📋 Enter product ID to remove:\n" + "\n".join(f"{p.id}. {p.name}" for p in products)
-    await message.answer(msg)
+    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
     await state.set_state(AdminState.remove_product)
 
 @router.message(AdminState.remove_product)
@@ -355,7 +373,10 @@ async def remove_area_prompt(message: Message, state: FSMContext):
         await message.answer("⚠️ No areas found.")
         return
     msg = "📋 Enter area ID to remove:\n" + "\n".join(f"{a.id}. {a.name}" for a in areas)
-    await message.answer(msg)
+    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
     await state.set_state(AdminState.remove_area)
 
 @router.message(AdminState.remove_area)
@@ -386,7 +407,10 @@ async def remove_amount_prompt(message: Message, state: FSMContext):
     msg = "📋 Enter amount ID to remove:\n" + "\n".join(
         f"{a.id}. {a.amount}€ (Area ID: {a.area_id})" for a in amounts
     )
-    await message.answer(msg)
+    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
     await state.set_state(AdminState.remove_amount)
 
 @router.message(AdminState.remove_amount)
@@ -405,4 +429,10 @@ async def remove_amount_execute(message: Message, state: FSMContext):
             await message.answer("✅ Amount removed.")
         else:
             await message.answer("❌ Amount not found.")
+    await state.set_state(AdminState.choose_action)
+
+@router.message(F.text == "❌ Cancel")
+async def cancel_admin_action(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("❌ Action canceled. Back to main menu.", reply_markup=get_admin_keyboard())
     await state.set_state(AdminState.choose_action)
