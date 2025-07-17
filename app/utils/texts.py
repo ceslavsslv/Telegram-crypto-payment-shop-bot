@@ -57,10 +57,105 @@ texts = {
         "ru": "🔗 Вы пригласили {count} пользователей.\nЗаработано: EUR{earned:.2f}",
         "lv": "🔗 Tu uzaicināji {count} lietotājus.\nNopelnīts: EUR{earned:.2f}"
     },
+    "NO_CITIES" : {
+        "en": "No cities available at the moment.",
+        "lv": "Pagaidām nav pieejamu pilsētu.",
+        "ru": "На данный момент нет доступных городов."
+    },
+
+    "NO_PRODUCTS" : {
+        "en": "No products available in this city.",
+        "lv": "Šajā pilsētā nav pieejamu produktu.",
+        "ru": "В этом городе нет доступных товаров."
+    },
+
+    "NO_AREAS" : {
+        "en": "No districts available for this product.",
+        "lv": "Nav pieejamu rajonu šim produktam.",
+        "ru": "Для этого продукта нет доступных районов."
+    },
+
+    "NO_AMOUNTS" : {
+        "en": "No product amounts available in this area.",
+        "lv": "Šajā rajonā nav pieejamu produktu daudzumu.",
+        "ru": "В этом районе нет доступных вариантов товара."
+    },
+
     "CHOOSE_CITY" : {
         "en": "🌆 Choose your city:",
         "lv": "🌆 Izvēlies pilsētu:",
         "ru": "🌆 Выберите город:"
+    },
+
+    "CHOOSE_PRODUCT" : {
+        "en": "🛍 Choose a product:",
+        "lv": "🛍 Izvēlies produktu:",
+        "ru": "🛍 Выберите товар:"
+    },
+
+    "CHOOSE_AREA" : {
+        "en": "📍 Choose an area/district:",
+        "lv": "📍 Izvēlies rajonu:",
+        "ru": "📍 Выберите район:"
+    },
+
+    "CHOOSE_AMOUNT" : {
+        "en": "💸 Choose amount:",
+        "lv": "💸 Izvēlies summu:",
+        "ru": "💸 Выберите сумму:"
+    },
+
+    "CONFIRM_PURCHASE" : {
+        "en": "✅ Confirm your purchase or navigate:",
+        "lv": "✅ Apstiprini pirkumu vai pārvietojies:",
+        "ru": "✅ Подтвердите покупку или выберите действие:"
+    },
+
+    "PAY_WITH_BALANCE" : {
+        "en": "💳 Pay with Balance",
+        "lv": "💳 Maksāt ar bilanci",
+        "ru": "💳 Купить с баланса"
+    },
+
+    "BACK" : {
+        "en": "🔙 Back",
+        "lv": "🔙 Atpakaļ",
+        "ru": "🔙 Назад"
+    },
+
+    "MAIN_MENU" : {
+        "en": "🏠 Main Menu",
+        "lv": "🏠 Galvenā izvēlne",
+        "ru": "🏠 Главное меню"
+    },
+    "INSUFFICIENT_FUNDS" : {
+        "en": "❌ Insufficient balance.",
+        "lv": "❌ Nepietiekama bilance.",
+        "ru": "❌ Недостаточно средств.",
+    },
+
+    "PURCHASE_SUCCESS" : {
+        "en": "✅ Purchase successful!",
+        "lv": "✅ Pirkums veiksmīgs!",
+        "ru": "✅ Покупка успешна!",
+    },
+
+    "INVALID_SELECTION" : {
+        "en": "Invalid purchase selection.",
+        "lv": "Nederīga izvēle.",
+        "ru": "Неверный выбор покупки.",
+    },
+
+    "OUT_OF_STOCK" : {
+        "en": "❌ Product is out of stock.",
+        "lv": "❌ Produkts nav pieejams.",
+        "ru": "❌ Товар отсутствует на складе.",
+    },
+
+    "NO_SUCH_AMOUNT" : {
+        "en": "This product amount is no longer available.",
+        "lv": "Šī produkta summa vairs nav pieejama.",
+        "ru": "Этот номинал товара больше недоступен.",
     }
 }
 NO_CITIES = {
