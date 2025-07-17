@@ -66,6 +66,8 @@ async def back_to_products(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data.startswith("product:"))
 async def choose_product(callback: CallbackQuery, state: FSMContext):
     product_id = int(callback.data.split(":")[1])
+    data = await state.get_data()
+    city_id = data.get("city_id")
     await state.update_data(product_id=product_id)
     with get_session() as db:
         areas = db.query(Area).filter_by(product_id=product_id).all()
@@ -76,10 +78,8 @@ async def choose_product(callback: CallbackQuery, state: FSMContext):
         ]))
         return
     buttons = [{"label": a.name, "data": f"area:{a.id}"} for a in areas]
-    buttons.extend([
-        {"label": texts.BACK["en"], "data": "back_to_products"},
-        {"label": texts.MAIN_MENU["en"], "data": "shopping"}
-    ])
+    buttons.append({"label": texts.BACK["en"], "data": "back_to_products"})
+    buttons.append({"label": texts.MAIN_MENU["en"], "data": "back_to_cities"})
     await state.set_state(ShopState.area)
     await callback.message.edit_text(texts.CHOOSE_AREA["en"], reply_markup=create_inline_keyboard(buttons))
 
