@@ -1,4 +1,7 @@
 # utils/texts.py
+from aiogram.types import Message, CallbackQuery
+from app.database import get_db
+from app.utils.helpers import get_or_create_user
 
 texts = {
     "start": {
@@ -109,10 +112,10 @@ CONFIRM_PURCHASE = {
     "ru": "✅ Подтвердите покупку или выберите действие:"
 }
 
-BUY_BY_BALANCE = {
-    "en": "✅ Buy by Balance",
-    "lv": "✅ Pirkt ar bilanci",
-    "ru": "✅ Купить с баланса"
+PAY_WITH_BALANCE = {
+    "en": "💳 Pay with Balance",
+    "lv": "💳 Maksāt ar bilanci",
+    "ru": "💳 Купить с баланса"
 }
 
 BACK = {
@@ -126,9 +129,59 @@ MAIN_MENU = {
     "lv": "🏠 Galvenā izvēlne",
     "ru": "🏠 Главное меню"
 }
+INSUFFICIENT_FUNDS = {
+    "en": "❌ Insufficient balance.",
+    "lv": "❌ Nepietiekama bilance.",
+    "ru": "❌ Недостаточно средств.",
+}
+
+PURCHASE_SUCCESS = {
+    "en": "✅ Purchase successful!",
+    "lv": "✅ Pirkums veiksmīgs!",
+    "ru": "✅ Покупка успешна!",
+}
+
+INVALID_SELECTION = {
+    "en": "Invalid purchase selection.",
+    "lv": "Nederīga izvēle.",
+    "ru": "Неверный выбор покупки.",
+}
+
+OUT_OF_STOCK = {
+    "en": "❌ Product is out of stock.",
+    "lv": "❌ Produkts nav pieejams.",
+    "ru": "❌ Товар отсутствует на складе.",
+}
+
+NO_SUCH_AMOUNT = {
+    "en": "This product amount is no longer available.",
+    "lv": "Šī produkta summa vairs nav pieejama.",
+    "ru": "Этот номинал товара больше недоступен.",
+}
 
 
-def t(key: str, lang: str = "en", **kwargs):
+def get_lang(source) -> str:
+    # From language string
+    if isinstance(source, str):
+        return source
+    # From Telegram message or callback
+    telegram_id = None
+    if isinstance(source, Message):
+        telegram_id = source.from_user.id
+    elif isinstance(source, CallbackQuery):
+        telegram_id = source.from_user.id
+    elif hasattr(source, "language"):
+        return getattr(source, "language", "en")
+
+    if telegram_id:
+        db = next(get_db())
+        user = get_or_create_user(db, telegram_id=telegram_id)
+        return getattr(user, "language", "en")
+
+    return "en"
+
+def t(key: str, source, **kwargs):
+    lang = get_lang(source)
     lang_data = texts.get(key)
     if not lang_data:
         return f"[Missing text: {key}]"

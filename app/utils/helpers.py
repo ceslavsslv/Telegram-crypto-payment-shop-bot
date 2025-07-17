@@ -1,6 +1,7 @@
 # utils/helpers.py
 from sqlalchemy.orm import Session
 from app.models import User, Product, City, Purchase
+from app.utils import texts
 
 def get_or_create_user(db: Session, telegram_id: int, language: str = "en") -> User:
     user = db.query(User).filter_by(telegram_id=telegram_id).first()
@@ -51,3 +52,5 @@ def add_purchase(db: Session, user_id: int, product_id: int, details: str):
     except Exception:
         db.rollback()
 
+def t(key: str, lang: str) -> str:
+    return texts.__dict__.get(key, {}).get(lang, texts.__dict__.get(key, {}).get("en", f"[{key}]"))

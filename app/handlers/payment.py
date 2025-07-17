@@ -6,63 +6,52 @@ from app.utils.helpers import get_or_create_user, get_product, deduct_balance, a
 from app.utils.btcpay import create_invoice
 from app.keyboards.common import get_menu_button_values
 from app.models import Product, Amount
+from aiogram.fsm.context import FSMContext
 
 router = Router()
 
-@router.callback_query(F.data.startswith("buy:"))
-async def handle_buy(callback: types.CallbackQuery):
-    product_id = int(callback.data.split(":")[1])
+@router.callback_query(F.data == "pay_balance")
+async def handle_balance_payment(callback: types.CallbackQuery, state: FSMContext):
+    from app.utils import texts  # ensure texts are imported
+
+    user_lang = "en"  # TODO: Replace with user's actual language setting from DB or session
+
     db = next(get_db())
     user = get_or_create_user(db, telegram_id=callback.from_user.id)
-    product = get_product(db, product_id)
+    data = await state.get_data()
+    amount_id = data.get("amount_id")
 
-    product = db.query(Product).filter(Product.id == product_id).first()
-
-    if not product:
-        await callback.answer("❌ Product not found.", show_alert=True)
+    if not amount_id:
+        await callback.answer(texts.INVALID_SELECTION[user_lang], show_alert=True)
         return
 
-    if hasattr(product, "stock") and product.stock is not None and product.stock < 1:
-        await callback.answer("❌ Product out of stock.", show_alert=True)
-        return
+    with get_session() as session:
+        amount = session.query(Amount).filter_by(id=amount_id).first()
 
-    builder = InlineKeyboardBuilder()
-    builder.button(text="💳 Buy by Balance", callback_data=f"buy_balance:{product.id}")
-    builder.button(text="⬅️ Back", callback_data="shop")
-    builder.button(text="⏮️ Back to Start", callback_data="start")
+        if not amount:
+            await callback.answer(texts.NO_SUCH_AMOUNT[user_lang], show_alert=True)
+            return
 
-    text = f"<b>{product.name}</b>\n\n{product.description}\n\nPrice: ${product.price}"
-    await callback.message.edit_text(text, reply_markup=builder.as_markup())
+        if hasattr(amount, "stock") and amount.stock is not None and amount.stock < 1:
+            await callback.answer(texts.OUT_OF_STOCK[user_lang], show_alert=True)
+            return
 
-@router.callback_query(F.data.startswith("buy_balance:"))
-async def handle_balance_purchase(callback: types.CallbackQuery):
-    db = next(get_db())
-    user = get_or_create_user(db, telegram_id=callback.from_user.id)
-    product_id = int(callback.data.split(":")[1])
-    product = get_product(db, product_id)
+        if not deduct_balance(session, user, amount.amount):
+            await callback.answer(texts.INSUFFICIENT_FUNDS[user_lang], show_alert=True)
+            return
 
-    if not product:
-        await callback.answer("❌ Product not found.", show_alert=True)
-        return
+        purchase_text = f"{texts.PURCHASE_SUCCESS[user_lang]}\n\n{amount.purchase_note or ''}"
+        add_purchase(session, user.id, amount.product_id, purchase_text)
 
-    if hasattr(product, "stock") and product.stock is not None and product.stock < 1:
-        await callback.answer("❌ Product out of stock.", show_alert=True)
-        return
+        if amount.image_file_id:
+            await callback.message.answer_photo(
+                photo=amount.image_file_id,
+                caption=purchase_text
+            )
+        else:
+            await callback.message.answer(purchase_text)
 
-    if not deduct_balance(db, user, product.price):
-        await callback.answer("❌ Insufficient balance.", show_alert=True)
-        return
-
-    # In real use, you'd assign a product license/code or delivery info
-    info = f"You purchased: {product.name}\nFind your item here: [link or code]"
-    add_purchase(db, user.id, product.id, info)
-
-    await callback.message.edit_text(f"✅ Purchase successful!\n\n{info}")
-
-    with get_session() as db_session:
-        amount = db_session.query(Amount).filter_by(product_id=product.id).first()
-        if amount and amount.purchase_note:
-            info += f"\n\n📦 {amount.purchase_note}"
+        await state.clear()
 
 @router.message(F.text.in_(get_menu_button_values("add_funds")))
 async def handle_add_funds(message: types.Message):

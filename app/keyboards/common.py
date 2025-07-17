@@ -2,6 +2,7 @@
 from aiogram.types import ReplyKeyboardMarkup
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from app.utils.texts import texts
+from app.utils.helpers import t, get_user_lang
 
 def main_menu_keyboard(language: str = "en") -> ReplyKeyboardMarkup:
     b = texts["menu_buttons"]
@@ -19,3 +20,9 @@ def main_menu_keyboard(language: str = "en") -> ReplyKeyboardMarkup:
 
 def get_menu_button_values(key: str) -> list[str]:
     return list(texts["menu_buttons"].get(key, {}).values())
+
+def back_main_menu_buttons(lang):
+    return [
+        {"label": t("BACK", lang), "data": "back"},
+        {"label": t("MAIN_MENU", lang), "data": "start"},
+    ]
