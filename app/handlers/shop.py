@@ -10,7 +10,6 @@ from app.utils.helpers import get_or_create_user, get_cities, get_products_by_ci
 from app.keyboards.common import get_menu_button_values, back_main_menu_buttons
 from app.models import City, Product, Area, Amount
 from app.states.shop import ShopState
-from app.utils import text
 from app.utils.texts import t
 
 router = Router()
