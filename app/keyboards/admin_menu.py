@@ -7,7 +7,7 @@ def get_admin_keyboard():
         ["➕ Add Product", "🗑 Remove Product"],
         ["➕ Add Area", "🗑 Remove Area"],
         ["➕ Add Amount", "🗑 Remove Amount"],
-        ["📝 Edit Notes", "📦 View Stock"],
+        ["📝 Edit Purchase Info", "📦 View Stock"],
         ["💰 Edit Balance", "🔄 Refund User"],
         ["🔍 Lookup User", "📊 Bot Stats"],
         ["⬅️ Exit Admin"]
