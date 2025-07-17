@@ -68,6 +68,9 @@ async def choose_product(callback: CallbackQuery, state: FSMContext):
     product_id = int(callback.data.split(":")[1])
     data = await state.get_data()
     city_id = data.get("city_id")
+    if not city_id:
+        await callback.message.edit_text(t("ERROR_NO_CITY", callback))
+        return
     await state.update_data(product_id=product_id)
     with get_session() as db:
         areas = db.query(Area).filter_by(product_id=product_id).all()
@@ -88,6 +91,10 @@ async def choose_area(callback: CallbackQuery, state: FSMContext):
     area_id = int(callback.data.split(":")[1])
     await state.update_data(area_id=area_id)
     with get_session() as db:
+        area = db.query(Area).filter_by(id=area_id).first()
+        if not area:
+            await callback.message.edit_text(t("AREA_NOT_FOUND", callback))
+            return
         amounts = db.query(Amount).filter_by(area_id=area_id).all()
     if not amounts:
         await callback.message.edit_text(t("NO_AMOUNTS", callback), reply_markup=create_inline_keyboard([

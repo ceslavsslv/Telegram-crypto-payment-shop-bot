@@ -156,6 +156,10 @@ texts = {
         "en": "This product amount is no longer available.",
         "lv": "Šī produkta summa vairs nav pieejama.",
         "ru": "Этот номинал товара больше недоступен.",
+    },
+    "AREA_NOT_FOUND": {
+    "en": "❌ Area not found. It might have been removed.",
+    "ru": "❌ Район не найден. Возможно, он был удален."
     }
 }
 NO_CITIES = {
