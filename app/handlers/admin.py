@@ -231,7 +231,11 @@ async def save_note(message: types.Message, state: FSMContext):
 
 @router.message(AdminState.choose_action, F.text == "🔄 Refund User")
 async def ask_user_id_for_refund(message: Message, state: FSMContext):
-    await message.answer("Enter User ID to refund:")
+    msg = "Enter User ID to refund:"
+    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
     await state.set_state(AdminState.refund_user_id)
 
 @router.message(AdminState.refund_user_id)
@@ -250,7 +254,11 @@ async def process_refund(message: Message, state: FSMContext):
 
 @router.message(AdminState.choose_action, F.text == "💰 Edit Balance")
 async def ask_balance_user_id(message: Message, state: FSMContext):
-    await message.answer("Enter User ID to change balance:")
+    msg = "Enter User ID to change balance:"
+    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
     await state.set_state(AdminState.balance_user_id)
 
 @router.message(AdminState.balance_user_id)
@@ -277,7 +285,11 @@ async def update_user_balance(message: Message, state: FSMContext):
 
 @router.message(AdminState.choose_action, F.text == "🔍 Lookup User")
 async def lookup_user_prompt(message: Message, state: FSMContext):
-    await message.answer("Enter Telegram User ID to lookup:")
+    msg = "Enter Telegram User ID to lookup:"
+    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
     await state.set_state(AdminState.lookup_user)
 
 @router.message(AdminState.lookup_user)
