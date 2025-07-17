@@ -32,15 +32,36 @@ async def start_shopping(message: Message, state: FSMContext):
     await state.set_state(ShopState.city)
     await message.answer(texts.CHOOSE_CITY["en"], reply_markup=create_inline_keyboard(buttons))
 
+@router.callback_query(F.data == "back_to_cities")
+async def back_to_cities(callback: CallbackQuery, state: FSMContext):
+    await start_shopping(callback.message, state)
+
 @router.callback_query(F.data.startswith("city:"))
 async def choose_city(callback: CallbackQuery, state: FSMContext):
     city_id = int(callback.data.split(":")[1])
     await state.update_data(city_id=city_id)
     with get_session() as db:
         products = db.query(Product).filter_by(city_id=city_id).all()
+    if not products:
+        await callback.message.edit_text(texts.NO_PRODUCTS["en"], reply_markup=create_inline_keyboard([
+            {"label": texts.BACK["en"], "data": "back_to_cities"}
+        ]))
+        return
     buttons = [{"label": f"{p.name}", "data": f"product:{p.id}"} for p in products]
+    buttons.append({"label": texts.BACK["en"], "data": "back_to_cities"})
     await state.set_state(ShopState.product)
-    await callback.message.edit_text("🛍 Choose a product:", reply_markup=create_inline_keyboard(buttons))
+    await callback.message.edit_text(texts.CHOOSE_PRODUCT["en"], reply_markup=create_inline_keyboard(buttons))
+
+@router.callback_query(F.data == "back_to_products")
+async def back_to_products(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    city_id = data.get("city_id")
+    with get_session() as db:
+        products = db.query(Product).filter_by(city_id=city_id).all()
+    buttons = [{"label": f"{p.name}", "data": f"product:{p.id}"} for p in products]
+    buttons.append({"label": texts.BACK["en"], "data": "back_to_cities"})
+    await state.set_state(ShopState.product)
+    await callback.message.edit_text(texts.CHOOSE_PRODUCT["en"], reply_markup=create_inline_keyboard(buttons))
 
 @router.callback_query(F.data.startswith("product:"))
 async def choose_product(callback: CallbackQuery, state: FSMContext):
@@ -48,9 +69,19 @@ async def choose_product(callback: CallbackQuery, state: FSMContext):
     await state.update_data(product_id=product_id)
     with get_session() as db:
         areas = db.query(Area).filter_by(product_id=product_id).all()
+    if not areas:
+        await callback.message.edit_text(texts.NO_AREAS["en"], reply_markup=create_inline_keyboard([
+            {"label": texts.BACK["en"], "data": "back_to_products"},
+            {"label": texts.MAIN_MENU["en"], "data": "shopping"}
+        ]))
+        return
     buttons = [{"label": a.name, "data": f"area:{a.id}"} for a in areas]
+    buttons.extend([
+        {"label": texts.BACK["en"], "data": "back_to_products"},
+        {"label": texts.MAIN_MENU["en"], "data": "shopping"}
+    ])
     await state.set_state(ShopState.area)
-    await callback.message.edit_text("📍 Choose an area/district:", reply_markup=create_inline_keyboard(buttons))
+    await callback.message.edit_text(texts.CHOOSE_AREA["en"], reply_markup=create_inline_keyboard(buttons))
 
 @router.callback_query(F.data.startswith("area:"))
 async def choose_area(callback: CallbackQuery, state: FSMContext):
@@ -58,9 +89,19 @@ async def choose_area(callback: CallbackQuery, state: FSMContext):
     await state.update_data(area_id=area_id)
     with get_session() as db:
         amounts = db.query(Amount).filter_by(area_id=area_id).all()
+    if not amounts:
+        await callback.message.edit_text(texts.NO_AMOUNTS["en"], reply_markup=create_inline_keyboard([
+            {"label": texts.BACK["en"], "data": "back_to_products"},
+            {"label": texts.MAIN_MENU["en"], "data": "shopping"}
+        ]))
+        return
     buttons = [{"label": f"{amt.label} - {amt.price}€", "data": f"amount:{amt.id}"} for amt in amounts]
+    buttons.extend([
+        {"label": texts.BACK["en"], "data": "back_to_products"},
+        {"label": texts.MAIN_MENU["en"], "data": "shopping"}
+    ])
     await state.set_state(ShopState.amount)
-    await callback.message.edit_text("💸 Choose amount:", reply_markup=create_inline_keyboard(buttons))
+    await callback.message.edit_text(texts.CHOOSE_AMOUNT["en"], reply_markup=create_inline_keyboard(buttons))
 
 @router.callback_query(F.data.startswith("amount:"))
 async def confirm_amount(callback: CallbackQuery, state: FSMContext):
@@ -68,8 +109,8 @@ async def confirm_amount(callback: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await state.clear()
     buttons = [
-        {"label": "✅ Buy by Balance", "data": "buy"},
-        {"label": "◀️ Back", "data": "back"},
-        {"label": "🔙 Back to Start", "data": "shopping"}
+        {"label": texts.BUY_BY_BALANCE["en"], "data": "buy"},
+        {"label": texts.BACK["en"], "data": "back_to_products"},
+        {"label": texts.MAIN_MENU["en"], "data": "shopping"}
     ]
-    await callback.message.edit_text("✅ Confirm your purchase or navigate:", reply_markup=create_inline_keyboard(buttons))
+    await callback.message.edit_text(texts.CONFIRM_PURCHASE["en"], reply_markup=create_inline_keyboard(buttons))
