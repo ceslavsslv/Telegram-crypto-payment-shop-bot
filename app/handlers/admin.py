@@ -32,6 +32,12 @@ async def sync_db(message: types.Message):
     Base.metadata.create_all(bind=engine)
     await message.answer("✅ Database tables created.")
 
+@router.message(F.text == "❌ Cancel")
+async def cancel_admin_action(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("❌ Action canceled. Back to main menu.", reply_markup=get_admin_keyboard())
+    await state.set_state(AdminState.choose_action)
+
 #new Add city flow
 
 @router.message(AdminState.choose_action, F.text == "➕ Add City")
@@ -54,6 +60,7 @@ async def add_city_save(message: Message, state: FSMContext):
             db.commit()
             await message.answer("✅ City added.")
     await state.set_state(AdminState.choose_action)
+    await message.answer("✅ City added.", reply_markup=get_admin_keyboard())
 
 # ➕ Add Product Flow
 
@@ -431,8 +438,4 @@ async def remove_amount_execute(message: Message, state: FSMContext):
             await message.answer("❌ Amount not found.")
     await state.set_state(AdminState.choose_action)
 
-@router.message(F.text == "❌ Cancel")
-async def cancel_admin_action(message: Message, state: FSMContext):
-    await state.clear()
-    await message.answer("❌ Action canceled. Back to main menu.", reply_markup=get_admin_keyboard())
-    await state.set_state(AdminState.choose_action)
+
