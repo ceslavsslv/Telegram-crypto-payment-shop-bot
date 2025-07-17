@@ -56,6 +56,11 @@ texts = {
         "en": "🔗 You invited {count} users.\nEarned: EUR{earned:.2f}",
         "ru": "🔗 Вы пригласили {count} пользователей.\nЗаработано: EUR{earned:.2f}",
         "lv": "🔗 Tu uzaicināji {count} lietotājus.\nNopelnīts: EUR{earned:.2f}"
+    },
+    "CHOOSE_CITY" : {
+        "en": "🌆 Choose your city:",
+        "lv": "🌆 Izvēlies pilsētu:",
+        "ru": "🌆 Выберите город:"
     }
 }
 NO_CITIES = {
