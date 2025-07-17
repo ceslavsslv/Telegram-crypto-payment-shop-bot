@@ -128,7 +128,7 @@ async def confirm_amount(callback: CallbackQuery, state: FSMContext):
     if not amount:
         await callback.message.answer(t("NO_SUCH_AMOUNT", callback))
         return
-    msg_text = f"{t("PRODUCT_INFO", callback)}\n\n{amount.description}\n\n💶 Price: {amount.amount}€"
+    msg_text = f"{t('PRODUCT_INFO', callback)}\n\n{amount.description}\n\n💶 Price: {amount.amount}€"
     buttons = [
         {"label": t("PAY_WITH_BALANCE", callback), "data": "pay_balance"},
         {"label": t("BACK", callback), "data": "back_to_amounts"},
