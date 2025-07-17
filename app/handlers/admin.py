@@ -285,11 +285,7 @@ async def update_user_balance(message: Message, state: FSMContext):
 
 @router.message(AdminState.choose_action, F.text == "🔍 Lookup User")
 async def lookup_user_prompt(message: Message, state: FSMContext):
-    msg = "Enter Telegram User ID to lookup:"
-    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="❌ Cancel")]],
-        resize_keyboard=True
-    ))
+    await message.answer("Enter Telegram User ID to lookup:")
     await state.set_state(AdminState.lookup_user)
 
 @router.message(AdminState.lookup_user)
