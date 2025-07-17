@@ -96,12 +96,25 @@ async def choose_area(callback: CallbackQuery, state: FSMContext):
         ]))
         return
     buttons = [{"label": f"{amt.label} - {amt.price}€", "data": f"amount:{amt.id}"} for amt in amounts]
-    buttons.extend([
-        {"label": texts.BACK["en"], "data": "back_to_products"},
-        {"label": texts.MAIN_MENU["en"], "data": "shopping"}
-    ])
+    buttons.append({"label": texts.BACK["en"], "data": "back_to_areas"})
+    buttons.append({"label": texts.MAIN_MENU["en"], "data": "back_to_cities"})
     await state.set_state(ShopState.amount)
     await callback.message.edit_text(texts.CHOOSE_AMOUNT["en"], reply_markup=create_inline_keyboard(buttons))
+
+@router.callback_query(F.data == "back_to_areas")
+async def back_to_areas(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    product_id = data.get("product_id")
+    with get_session() as db:
+        areas = db.query(Area).filter_by(product_id=product_id).all()
+    if not areas:
+        await callback.message.edit_text(texts.NO_AREAS["en"])
+        return
+    buttons = [{"label": area.name, "data": f"area:{area.id}"} for area in areas]
+    buttons.append({"label": texts.BACK["en"], "data": "back_to_products"})
+    buttons.append({"label": texts.MAIN_MENU["en"], "data": "back_to_cities"})
+    await state.set_state(ShopState.area)
+    await callback.message.edit_text(texts.CHOOSE_AREA["en"], reply_markup=create_inline_keyboard(buttons))
 
 @router.callback_query(F.data.startswith("amount:"))
 async def confirm_amount(callback: CallbackQuery, state: FSMContext):
