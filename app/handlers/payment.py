@@ -2,20 +2,19 @@
 from aiogram import Router, types, F
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from app.database import get_db, get_session
-from app.utils.helpers import get_or_create_user, get_product, deduct_balance, add_purchase
+from app.utils.helpers import get_or_create_user, get_product, deduct_balance, add_purchase, get_user_lang
 from app.utils.btcpay import create_invoice
 from app.keyboards.common import get_menu_button_values
 from app.models import Product, Amount
 from aiogram.fsm.context import FSMContext
+from app.utils import texts
 
 router = Router()
 
 @router.callback_query(F.data == "pay_balance")
 async def handle_balance_payment(callback: types.CallbackQuery, state: FSMContext):
-    from app.utils import texts  # ensure texts are imported
 
-    user_lang = "en"  # TODO: Replace with user's actual language setting from DB or session
-
+    user_lang = get_user_lang(callback)
     db = next(get_db())
     user = get_or_create_user(db, telegram_id=callback.from_user.id)
     data = await state.get_data()
@@ -36,7 +35,7 @@ async def handle_balance_payment(callback: types.CallbackQuery, state: FSMContex
             await callback.answer(texts.OUT_OF_STOCK[user_lang], show_alert=True)
             return
 
-        if not deduct_balance(session, user, amount.amount):
+        if not deduct_balance(session, user, amount.price):
             await callback.answer(texts.INSUFFICIENT_FUNDS[user_lang], show_alert=True)
             return
 
