@@ -3,12 +3,12 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 ADMIN_KB = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton("➕ Add City"), KeyboardButton("🗑 Remove City")],
-        [KeyboardButton("➕ Add Product"), KeyboardButton("🗑 Remove Product")],
-        [KeyboardButton("➕ Add Area"), KeyboardButton("🗑 Remove Area")],
-        [KeyboardButton("➕ Add Amount"), KeyboardButton("🗑 Remove Amount")],
-        [KeyboardButton("📣 Broadcast"), KeyboardButton("📦 View Stock")],
-        [KeyboardButton("⬅️ Exit Admin")],
+        [KeyboardButton(text="➕ Add City"), KeyboardButton(text="🗑 Remove City")],
+        [KeyboardButton(text="➕ Add Product"), KeyboardButton(text="🗑 Remove Product")],
+        [KeyboardButton(text="➕ Add Area"), KeyboardButton(text="🗑 Remove Area")],
+        [KeyboardButton(text="➕ Add Amount"), KeyboardButton(text="🗑 Remove Amount")],
+        [KeyboardButton(text="📣 Broadcast"), KeyboardButton(text="📦 View Stock")],
+        [KeyboardButton(text="⬅️ Exit Admin")],
     ],
     resize_keyboard=True
 )
