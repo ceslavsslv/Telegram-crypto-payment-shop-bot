@@ -154,7 +154,7 @@ async def confirm_amount(callback: CallbackQuery, state: FSMContext):
             return
     await state.update_data(amount_id=amount_id)
     await state.set_state(ShopState.confirm)
-    msg_text = f"{t('PRODUCT_INFO', callback)}\n\n{amount.description}\n\n💶 Price: {amount.amount}€"
+    msg_text = f"{t('PRODUCT_INFO', callback)}\n\n{amount.description}\n\n💶 Price: {amount.price}€"
     buttons = [
         {"label": t("PAY_WITH_BALANCE", callback), "data": "pay_balance"},
         {"label": t("BACK", callback), "data": "back_to_amounts"},
