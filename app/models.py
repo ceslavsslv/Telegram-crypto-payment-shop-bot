@@ -51,10 +51,6 @@ class Area(Base):
 
 
 class Amount(Base):
-    purchase_info = Column(Text)
-    purchase_note = Column(String, nullable=True)
-
-    
     __tablename__ = "amounts"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -62,10 +58,11 @@ class Amount(Base):
     label = Column(String, nullable=False)
     price = Column(Float, nullable=False)
     is_active = Column(Boolean, default=True)
-
-    area = relationship("Area", back_populates="amounts")
     image_file_id = Column(String, nullable=True)
-
+    purchase_info = Column(Text, nullable=True)
+    purchase_note = Column(String, nullable=True)
+    area = relationship("Area", back_populates="amounts")
+    
 class Purchase(Base):
     __tablename__ = "purchases"
 

@@ -1,6 +1,6 @@
 # handlers/start.py
 import logging
-from aiogram import Router, types, F
+from aiogram import Router, types
 from aiogram.filters import Command
 from app.keyboards.common import main_menu_keyboard
 from app.utils.texts import texts

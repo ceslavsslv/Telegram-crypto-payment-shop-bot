@@ -1,13 +1,9 @@
 # handlers/shop.py
-from aiogram import Router, types, F
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
-from sqlalchemy.orm import Session
-from app.database import get_db, get_session
-from app.utils.helpers import get_or_create_user, get_cities, get_products_by_city
-from app.keyboards.common import get_menu_button_values, back_main_menu_buttons
+from app.database import get_session
+from app.keyboards.common import get_menu_button_values
 from app.models import City, Product, Area, Amount
 from app.states.shop import ShopState
 from app.utils.texts import t
@@ -112,7 +108,7 @@ async def choose_area(callback: CallbackQuery, state: FSMContext):
         amounts = db.query(Amount).filter_by(area_id=area.id).all()
     if not amounts:
         await callback.message.edit_text(t("NO_AMOUNTS", callback), reply_markup=create_inline_keyboard([
-                {"label": t("BACK", callback), "data": "back_to_products"},
+                {"label": t("BACK", callback), "data": "back_to_areas"},
                 {"label": t("MAIN_MENU", callback), "data": "shopping"}
             ])
         )

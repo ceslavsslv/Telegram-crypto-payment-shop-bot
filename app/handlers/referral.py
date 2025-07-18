@@ -1,6 +1,4 @@
 from aiogram import Router, types, F
-from aiogram.types import Message
-from aiogram.filters import Command
 from app.keyboards.common import get_menu_button_values
 from app.database import get_db
 from app.utils.helpers import get_or_create_user
