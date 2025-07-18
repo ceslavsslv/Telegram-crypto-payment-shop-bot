@@ -324,7 +324,7 @@ async def view_stock_summary(message: Message, state: FSMContext):
                     if amount.image_file_id:
                         text += "\n       🖼 Image attached"
                     if amount.delivery_note:
-                        text += f"\n       📄 Note: {amount.delivery_note}"
+                        text += f"\n       📄 Note: {amount.purchase_note}"
                     if amount.delivery_photos:
                         text += f"\n       📸 Photos: {len(amount.delivery_photos.split(','))}"
                     if amount.delivery_location:
