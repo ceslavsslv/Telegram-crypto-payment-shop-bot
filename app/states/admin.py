@@ -29,3 +29,9 @@ class AdminState(StatesGroup):
     remove_product = State()
     remove_area = State()
     remove_amount = State()
+
+    edit_amount_select = State()
+    edit_amount_image = State()
+    edit_amount_description = State()
+    edit_amount_note = State()
+    edit_amount_remove_option = State() 

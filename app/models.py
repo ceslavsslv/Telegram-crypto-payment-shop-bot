@@ -63,6 +63,7 @@ class Amount(Base):
     is_active = Column(Boolean, default=True)
 
     area = relationship("Area", back_populates="amounts")
+    image_file_id = Column(String, nullable=True)
 
 class Purchase(Base):
     __tablename__ = "purchases"

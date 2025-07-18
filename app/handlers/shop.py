@@ -65,14 +65,22 @@ async def back_to_products(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data.startswith("product:"))
 async def choose_product(callback: CallbackQuery, state: FSMContext):
-    product_id = int(callback.data.split(":")[1])
+    try:
+        product_id = int(callback.data.split(":")[1])
+    except (IndexError, ValueError):
+        await callback.answer(t("INVALID_SELECTION", callback), show_alert=True)
+        return
     data = await state.get_data()
     city_id = data.get("city_id")
     if not city_id:
         await callback.message.edit_text(t("ERROR_NO_CITY", callback))
         return
-    await state.update_data(product_id=product_id)
+    
     with get_session() as db:
+        product = db.query(Product).filter_by(id=product_id).first()
+        if not product:
+            await callback.message.edit_text(t("PRODUCT_NOT_FOUND", callback))
+            return
         areas = db.query(Area).filter_by(product_id=product_id).all()
     if not areas:
         await callback.message.edit_text(t("NO_AREAS", callback), reply_markup=create_inline_keyboard([
@@ -80,6 +88,7 @@ async def choose_product(callback: CallbackQuery, state: FSMContext):
             {"label": t("MAIN_MENU", callback), "data": "shopping"}
         ]))
         return
+    await state.update_data(product_id=product_id)
     buttons = [{"label": a.name, "data": f"area:{a.id}"} for a in areas]
     buttons.append({"label": t("BACK", callback), "data": "back_to_products"})
     buttons.append({"label": t("MAIN_MENU", callback), "data": "back_to_cities"})
@@ -93,14 +102,20 @@ async def choose_area(callback: CallbackQuery, state: FSMContext):
     with get_session() as db:
         area = db.query(Area).filter_by(id=area_id).first()
         if not area:
-            await callback.message.edit_text(t("AREA_NOT_FOUND", callback))
+            await callback.message.edit_text(t("AREA_NOT_FOUND", callback),
+                                             reply_markup=create_inline_keyboard([
+                                                {"label": t("BACK", callback), "data": "back_to_products"},
+                                                {"label": t("MAIN_MENU", callback), "data": "shopping"}
+                                            ])
+                                        )
             return
-        amounts = db.query(Amount).filter_by(area_id=area_id).all()
+        amounts = db.query(Amount).filter_by(area_id=area.id).all()
     if not amounts:
         await callback.message.edit_text(t("NO_AMOUNTS", callback), reply_markup=create_inline_keyboard([
-            {"label": t("BACK", callback), "data": "back_to_products"},
-            {"label": t("MAIN_MENU", callback), "data": "shopping"}
-        ]))
+                {"label": t("BACK", callback), "data": "back_to_products"},
+                {"label": t("MAIN_MENU", callback), "data": "shopping"}
+            ])
+        )
         return
     buttons = [{"label": f"{amt.label} - {amt.price}€", "data": f"amount:{amt.id}"} for amt in amounts]
     buttons.append({"label": t("BACK", callback), "data": "back_to_areas"})
@@ -125,22 +140,30 @@ async def back_to_areas(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data.startswith("amount:"))
 async def confirm_amount(callback: CallbackQuery, state: FSMContext):
-    amount_id = int(callback.data.split(":")[1])
-    data = await state.get_data()
-    await state.update_data(amount_id=amount_id)
+    try:
+        amount_id = int(callback.data.split(":")[1])
+    except (IndexError, ValueError):
+        await callback.answer(t("INVALID_SELECTION", callback), show_alert=True)
+        return
     with get_session() as db:
         amount = db.query(Amount).filter_by(id=amount_id).first()
-    await state.clear()
-    if not amount:
-        await callback.message.answer(t("NO_SUCH_AMOUNT", callback))
-        return
+        if not amount:
+            await callback.message.edit_text(
+                t("AMOUNT_NOT_FOUND", callback),
+                reply_markup=create_inline_keyboard([
+                    {"label": t("BACK", callback), "data": "back_to_areas"},
+                    {"label": t("MAIN_MENU", callback), "data": "back_to_cities"}
+                ])
+            )
+            return
+    await state.update_data(amount_id=amount_id)
+    await state.set_state(ShopState.confirm)
     msg_text = f"{t('PRODUCT_INFO', callback)}\n\n{amount.description}\n\n💶 Price: {amount.amount}€"
     buttons = [
         {"label": t("PAY_WITH_BALANCE", callback), "data": "pay_balance"},
         {"label": t("BACK", callback), "data": "back_to_amounts"},
         {"label": t("MAIN_MENU", callback), "data": "back_to_cities"},
     ]
-    await state.set_state(ShopState.confirm)
     if amount.image_file_id:
         await callback.message.answer_photo(
             photo=amount.image_file_id,
@@ -152,6 +175,7 @@ async def confirm_amount(callback: CallbackQuery, state: FSMContext):
             msg_text,
             reply_markup=create_inline_keyboard(buttons)
         )
+    await callback.message.delete()
 
 @router.callback_query(F.data == "back_to_amounts")
 async def back_to_amounts(callback: CallbackQuery, state: FSMContext):

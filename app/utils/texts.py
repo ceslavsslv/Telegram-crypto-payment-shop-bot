@@ -158,9 +158,26 @@ texts = {
         "ru": "Этот номинал товара больше недоступен.",
     },
     "AREA_NOT_FOUND": {
-    "en": "❌ Area not found. It might have been removed.",
-    "ru": "❌ Район не найден. Возможно, он был удален."
-    }
+        "en": "❌ Area not found. It might have been removed.",
+        "lv": "❌ Rajons nav atrasts. Tas varētu būt izdzēsts.",
+        "ru": "❌ Район не найден. Возможно, он был удален."
+    },
+    "INVALID_SELECTION": {
+        "en": "❌ Invalid selection. Please try again from the menu.",
+        "lv": "❌ Invalid selection. Please try again from the menu.",
+        "ru": "❌ Неверный выбор. Пожалуйста, попробуйте снова из меню."
+    },
+    "PRODUCT_NOT_FOUND": {
+        "en": "❌ Product not found. It may have been removed.",
+        "lv": "❌ Produkts nav atrasts.",
+        "ru": "❌ Продукт не найден. Возможно, он был удален."
+    },
+    "AMOUNT_NOT_FOUND": {
+        "en": "❌ Amount not found. Please choose another option.",
+        "lv": "❌ Daudzums nav atrasts",
+        "ru": "❌ Сумма не найдена. Пожалуйста, выберите другой вариант."
+    },
+
 }
 NO_CITIES = {
     "en": "No cities available at the moment.",

@@ -463,4 +463,255 @@ async def remove_amount_execute(message: Message, state: FSMContext):
             await message.answer("❌ Amount not found.")
     await state.set_state(AdminState.choose_action)
 
+@router.message(AdminState.choose_action, F.text == "🖼 Set Amount Image")
+async def admin_start_edit_image(message: Message, state: FSMContext):
+    with get_session() as db:
+        amounts = db.query(Amount).all()
+    if not amounts:
+        await message.answer("⚠️ No amounts available.")
+        return
 
+    msg = "🖼 Select amount to upload an image:\n" + "\n".join(
+        f"{a.id}. {a.label} ({a.price}€) – Area ID: {a.area_id}" for a in amounts
+    )
+    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
+    await state.set_state(AdminState.edit_amount_image)
+
+@router.message(AdminState.edit_amount_image)
+async def admin_upload_image(message: Message, state: FSMContext):
+    if message.text == "❌ Cancel":
+        await message.answer("❌ Cancelled", reply_markup=get_admin_keyboard())
+        return await state.set_state(AdminState.choose_action)
+
+    try:
+        amount_id = int(message.text.strip())
+    except ValueError:
+        await message.answer("❌ Invalid ID. Please enter a number.")
+        return
+
+    with get_session() as db:
+        amount = db.query(Amount).filter_by(id=amount_id).first()
+
+    if not amount:
+        await message.answer("❌ Amount not found.")
+        return
+
+    await state.update_data(amount_id=amount_id)
+    await message.answer("📸 Now send the photo to use for this amount, or /cancel to abort.")
+    await state.set_state(AdminState.edit_amount_select)
+
+@router.message(AdminState.edit_amount_select, F.photo)
+async def admin_save_amount_image(message: Message, state: FSMContext):
+    data = await state.get_data()
+    amount_id = data.get("amount_id")
+
+    photo = message.photo[-1]
+    file_id = photo.file_id
+
+    with get_session() as db:
+        amount = db.query(Amount).filter_by(id=amount_id).first()
+        if amount:
+            amount.image_file_id = file_id
+            db.commit()
+
+    await message.answer("✅ Image saved for this amount.", reply_markup=get_admin_keyboard())
+    await state.set_state(AdminState.choose_action)
+
+@router.message(AdminState.edit_amount_select)
+async def admin_image_required(message: Message, state: FSMContext):
+    await message.answer("❌ Please send an actual photo.")
+
+@router.message(AdminState.choose_action, F.text == "✏️ Set Amount Description")
+async def admin_start_edit_description(message: Message, state: FSMContext):
+    with get_session() as db:
+        amounts = db.query(Amount).all()
+    if not amounts:
+        await message.answer("⚠️ No amounts available.")
+        return
+
+    msg = "✏️ Select amount to edit its description:\n" + "\n".join(
+        f"{a.id}. {a.label} ({a.price}€) – Area ID: {a.area_id}" for a in amounts
+    )
+    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    ))
+    await state.set_state(AdminState.edit_amount_description)
+
+@router.message(AdminState.edit_amount_description)
+async def admin_enter_description(message: Message, state: FSMContext):
+    if message.text == "❌ Cancel":
+        await message.answer("❌ Cancelled", reply_markup=get_admin_keyboard())
+        return await state.set_state(AdminState.choose_action)
+
+    try:
+        amount_id = int(message.text.strip())
+    except ValueError:
+        await message.answer("❌ Invalid ID.")
+        return
+
+    with get_session() as db:
+        amount = db.query(Amount).filter_by(id=amount_id).first()
+
+    if not amount:
+        await message.answer("❌ Amount not found.")
+        return
+
+    await state.update_data(amount_id=amount_id)
+    await message.answer("📝 Now send the new description text.")
+    await state.set_state(AdminState.edit_amount_select)
+
+@router.message(AdminState.edit_amount_select)
+async def admin_save_description(message: Message, state: FSMContext):
+    data = await state.get_data()
+    amount_id = data.get("amount_id")
+
+    with get_session() as db:
+        amount = db.query(Amount).filter_by(id=amount_id).first()
+        if amount:
+            amount.description = message.text
+            db.commit()
+
+    await message.answer("✅ Description updated.", reply_markup=get_admin_keyboard())
+    await state.set_state(AdminState.choose_action)
+
+@router.message(AdminState.choose_action, F.text == "📝 Set Delivery Note")
+async def admin_start_delivery_note(message: Message, state: FSMContext):
+    with get_session() as db:
+        amounts = db.query(Amount).all()
+    if not amounts:
+        await message.answer("⚠️ No amounts available.")
+        return
+
+    msg = "📝 Select amount to edit its delivery note:\n" + "\n".join(
+        f"{a.id}. {a.label} ({a.price}€) – Area ID: {a.area_id}" for a in amounts
+    )
+    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]], resize_keyboard=True
+    ))
+    await state.set_state(AdminState.edit_amount_note)
+
+@router.message(AdminState.edit_amount_note)
+async def admin_save_note(message: Message, state: FSMContext):
+    if message.text == "❌ Cancel":
+        await message.answer("❌ Cancelled", reply_markup=get_admin_keyboard())
+        return await state.set_state(AdminState.choose_action)
+
+    try:
+        amount_id = int(message.text.strip())
+    except ValueError:
+        await message.answer("❌ Invalid ID.")
+        return
+
+    with get_session() as db:
+        amount = db.query(Amount).filter_by(id=amount_id).first()
+
+    if not amount:
+        await message.answer("❌ Amount not found.")
+        return
+
+    await state.update_data(amount_id=amount_id)
+    await message.answer("💬 Now send the delivery note to show after payment.")
+    await state.set_state(AdminState.edit_amount_select)
+
+@router.message(AdminState.edit_amount_select)
+async def admin_save_delivery_note(message: Message, state: FSMContext):
+    data = await state.get_data()
+    amount_id = data.get("amount_id")
+
+    with get_session() as db:
+        amount = db.query(Amount).filter_by(id=amount_id).first()
+        if amount:
+            amount.purchase_info = message.text
+            db.commit()
+
+    await message.answer("✅ Delivery note saved.", reply_markup=get_admin_keyboard())
+    await state.set_state(AdminState.choose_action)
+
+@router.message(AdminState.choose_action, F.text == "♻️ Remove Image/Note")
+async def admin_start_removal(message: Message, state: FSMContext):
+    with get_session() as db:
+        amounts = db.query(Amount).all()
+    if not amounts:
+        await message.answer("⚠️ No amounts available.")
+        return
+
+    msg = "♻️ Select amount to remove a field:\n" + "\n".join(
+        f"{a.id}. {a.label} ({a.price}€) – Area ID: {a.area_id}" for a in amounts
+    )
+    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]], resize_keyboard=True
+    ))
+    await state.set_state(AdminState.edit_amount_remove_option)
+
+@router.message(AdminState.edit_amount_remove_option)
+async def admin_choose_removal_field(message: Message, state: FSMContext):
+    if message.text == "❌ Cancel":
+        await message.answer("❌ Cancelled", reply_markup=get_admin_keyboard())
+        return await state.set_state(AdminState.choose_action)
+
+    try:
+        amount_id = int(message.text.strip())
+    except ValueError:
+        await message.answer("❌ Invalid ID.")
+        return
+
+    with get_session() as db:
+        amount = db.query(Amount).filter_by(id=amount_id).first()
+
+    if not amount:
+        await message.answer("❌ Amount not found.")
+        return
+
+    await state.update_data(amount_id=amount_id)
+    await message.answer(
+        "♻️ What do you want to remove?",
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="🖼 Remove Image")],
+                [KeyboardButton(text="✏️ Remove Description")],
+                [KeyboardButton(text="📝 Remove Delivery Note")],
+                [KeyboardButton(text="❌ Cancel")]
+            ],
+            resize_keyboard=True
+        )
+    )
+    await state.set_state(AdminState.edit_amount_select)
+
+@router.message(AdminState.edit_amount_select)
+async def admin_remove_selected_field(message: Message, state: FSMContext):
+    data = await state.get_data()
+    amount_id = data.get("amount_id")
+
+    field = None
+    label = None
+
+    if message.text == "🖼 Remove Image":
+        field = "image_file_id"
+        label = "image"
+    elif message.text == "✏️ Remove Description":
+        field = "description"
+        label = "description"
+    elif message.text == "📝 Remove Delivery Note":
+        field = "purchase_info"
+        label = "delivery note"
+    elif message.text == "❌ Cancel":
+        await message.answer("❌ Cancelled", reply_markup=get_admin_keyboard())
+        return await state.set_state(AdminState.choose_action)
+    else:
+        await message.answer("❌ Unknown option.")
+        return
+
+    with get_session() as db:
+        amount = db.query(Amount).filter_by(id=amount_id).first()
+        if amount and hasattr(amount, field):
+            setattr(amount, field, None)
+            db.commit()
+            await message.answer(f"✅ {label.capitalize()} removed.", reply_markup=get_admin_keyboard())
+        else:
+            await message.answer("⚠️ Failed to update.")
+
+    await state.set_state(AdminState.choose_action)
