@@ -61,6 +61,7 @@ class Amount(Base):
     image_file_id = Column(String, nullable=True)
     purchase_info = Column(Text, nullable=True)
     purchase_note = Column(String, nullable=True)
+    description = Column(Text, default="")
     area = relationship("Area", back_populates="amounts")
     
 class Purchase(Base):
