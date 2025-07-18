@@ -18,6 +18,12 @@ class IsAdmin(Filter):
 router = Router()
 router.message.filter(IsAdmin())
 
+@router.message(Command("admin"))
+async def cmd_admin(message: Message, state: FSMContext):
+    """Entry point for admins to open the panel."""
+    await message.answer("🔧 Welcome to the Admin Panel.", reply_markup=ADMIN_KB)
+    await state.set_state(AdminState.choose_action)
+
 async def reset_to_menu(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Back to admin menu.", reply_markup=ADMIN_KB)
