@@ -39,3 +39,4 @@ class AdminState(StatesGroup):
     save_delivery_note = State()
     edit_amount_remove_choice = State()
     edit_amount_description_write = State()
+    edit_purchase_note = State()
