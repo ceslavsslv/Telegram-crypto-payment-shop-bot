@@ -346,6 +346,7 @@ async def remove_city_execute(message: Message, state: FSMContext):
             db.delete(city)
             db.commit()
             await message.answer("✅ City removed.")
+            await state.set_state(AdminState.choose_action)
         else:
             await message.answer("❌ City not found.")
     await state.set_state(AdminState.choose_action)
@@ -378,6 +379,7 @@ async def remove_product_execute(message: Message, state: FSMContext):
             db.delete(product)
             db.commit()
             await message.answer("✅ Product removed.")
+            await state.set_state(AdminState.choose_action)
         else:
             await message.answer("❌ Product not found.")
     await state.set_state(AdminState.choose_action)
@@ -410,6 +412,7 @@ async def remove_area_execute(message: Message, state: FSMContext):
             db.delete(area)
             db.commit()
             await message.answer("✅ Area removed.")
+            await state.set_state(AdminState.choose_action)
         else:
             await message.answer("❌ Area not found.")
     await state.set_state(AdminState.choose_action)
@@ -444,6 +447,7 @@ async def remove_amount_execute(message: Message, state: FSMContext):
             db.delete(amount)
             db.commit()
             await message.answer("✅ Amount removed.")
+            await state.set_state(AdminState.choose_action)
         else:
             await message.answer("❌ Amount not found.")
     await state.set_state(AdminState.choose_action)
