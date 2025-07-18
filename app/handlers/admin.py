@@ -1,16 +1,116 @@
 # handlers/admin.py
-from aiogram import Router, types, F
+from aiogram import Router, types, F, Bot
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
-from aiogram.filters import Command
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.filters import Command, Filter
+from sqlalchemy.orm import Session
 from app.states.admin import AdminState
 from app.config import ADMINS
 from app.database import engine, get_session
-from app.models import Base, City, Product, Area, Amount
-from app.keyboards.admin_menu import get_admin_keyboard
+from app.models import Base, City, Product, Area, Amount, User
+from app.keyboards.admin_menu import  ADMIN_KB, CANCEL_KB #get_admin_keyboard,
 
+class IsAdmin(Filter):
+    async def __call__(self, message: Message) -> bool:
+        return message.from_user.id in ADMINS
+    
 router = Router()
+router.message.filter(IsAdmin())
 
+async def reset_to_menu(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("Back to admin menu.", reply_markup=ADMIN_KB)
+    await state.set_state(AdminState.choose_action)
+
+def register_crud(
+    model,
+    add_label: str,
+    remove_label: str,
+    state_add: State,
+    state_remove: State,
+    display_field: str = "name",
+):
+    # Add Action
+    @router.message(AdminState.choose_action, F.text == add_label)
+    async def _(message: Message, state: FSMContext):
+        await message.answer(f"➕ Enter new {model.__name__.lower()} {display_field}:", reply_markup=CANCEL_KB)
+        await state.set_state(state_add)
+
+    @router.message(state_add)
+    async def _(message: Message, state: FSMContext):
+        value = message.text.strip()
+        with get_session() as db:
+            exists = db.query(model).filter(getattr(model, display_field) == value).first()
+            if exists:
+                await message.answer(f"⚠️ {model.__name__} '{value}' already exists.")
+            else:
+                db.add(model(**{display_field: value}))
+                db.commit()
+                await message.answer(f"✅ {model.__name__} '{value}' added.")
+        await reset_to_menu(message, state)
+
+    # Remove Action
+    @router.message(AdminState.choose_action, F.text == remove_label)
+    async def _(message: Message, state: FSMContext):
+        with get_session() as db:
+            items = db.query(model).all()
+        if not items:
+            await message.answer(f"⚠️ No {model.__name__.lower()}s found.")
+            return await reset_to_menu(message, state)
+        keyboard = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
+            [KeyboardButton(str(getattr(obj, 'id')) + f" – {getattr(obj, display_field)}")] for obj in items
+        ] + [[KeyboardButton("❌ Cancel")]])
+        await message.answer(f"🗑 Select {model.__name__.lower()} ID to remove:", reply_markup=keyboard)
+        await state.set_state(state_remove)
+
+    @router.message(state_remove)
+    async def _(message: Message, state: FSMContext):
+        if message.text == "❌ Cancel":
+            return await reset_to_menu(message, state)
+        try:
+            obj_id = int(message.text.split()[0])
+        except ValueError:
+            return await message.answer("⚠️ Invalid ID. Try again or cancel.")
+        with get_session() as db:
+            obj = db.query(model).get(obj_id)
+            if not obj:
+                return await message.answer("⚠️ Not found. Try again or cancel.")
+            db.delete(obj)
+            db.commit()
+            await message.answer(f"✅ Removed {model.__name__} '{getattr(obj, display_field)}'.")
+        await reset_to_menu(message, state)
+
+for cfg in [
+    (City, "➕ Add City", "🗑 Remove City", AdminState.city_add, AdminState.city_remove),
+    (Product, "➕ Add Product", "🗑 Remove Product", AdminState.product_add, AdminState.product_remove),
+    (Area, "➕ Add Area", "🗑 Remove Area", AdminState.area_add, AdminState.area_remove),
+    (Amount, "➕ Add Amount", "🗑 Remove Amount", AdminState.amount_add, AdminState.amount_remove),
+]:
+    register_crud(*cfg)
+
+@router.message(AdminState.choose_action, F.text == "📣 Broadcast")
+async def ask_broadcast(message: Message, state: FSMContext):
+    await message.answer("✉️ Send me the message to broadcast to all users:", reply_markup=CANCEL_KB)
+    await state.set_state(AdminState.broadcast_text)
+
+@router.message(AdminState.broadcast_text)
+async def do_broadcast(message: Message, state: FSMContext, bot: Bot):
+    if message.text == "❌ Cancel":
+        return await reset_to_menu(message, state)
+    text = message.text
+    with get_session() as db:
+        user_ids = [u.telegram_id for u in db.query(User).all()]
+    for uid in user_ids:
+        try:
+            await bot.send_message(uid, text)
+        except:
+            pass
+    await message.answer("✅ Broadcast sent.")
+    await reset_to_menu(message, state)
+
+#vecais kods 
+'''
 def is_admin(user_id: int) -> bool:
     return user_id in ADMINS
 
@@ -692,3 +792,4 @@ async def admin_remove_selected_field(message: Message, state: FSMContext):
             await message.answer("⚠️ Failed to update.")
 
     await state.set_state(AdminState.choose_action)
+'''

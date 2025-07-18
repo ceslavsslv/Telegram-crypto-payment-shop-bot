@@ -3,6 +3,7 @@
 from aiogram.fsm.state import StatesGroup, State
 
 class AdminState(StatesGroup):
+    '''
     choose_action = State()
     
     city_name = State()
@@ -35,3 +36,15 @@ class AdminState(StatesGroup):
     edit_amount_description = State()
     edit_amount_note = State()
     edit_amount_remove_option = State() 
+'''
+    choose_action = State()
+    # dynamically generated below for CRUD
+    city_add = State()
+    city_remove = State()
+    product_add = State()
+    product_remove = State()
+    area_add = State()
+    area_remove = State()
+    amount_add = State()
+    amount_remove = State()
+    broadcast_text = State()
