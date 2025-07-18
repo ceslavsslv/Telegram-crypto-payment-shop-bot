@@ -2,7 +2,7 @@
 from aiogram import Router, types, F
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from app.database import get_db, get_session
-from app.utils.helpers import get_or_create_user, get_product, deduct_balance, add_purchase, get_user_lang
+from app.utils.helpers import get_or_create_user, get_product, deduct_balance, add_purchase
 from app.utils.btcpay import create_invoice
 from app.keyboards.common import get_menu_button_values
 from app.models import Product, Amount
