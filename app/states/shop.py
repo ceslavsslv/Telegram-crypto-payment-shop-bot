@@ -7,3 +7,5 @@ class ShopState(StatesGroup):
     product = State()
     area = State()
     amount = State()
+    confirm = State()
+    
