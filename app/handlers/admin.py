@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.states.admin import AdminState
 from app.config import ADMINS
 from app.database import engine, get_session
-from app.models import Base, City, Product, Area, Amount, User
+from app.models import Base, City, Product, Area, Amount, User, Purchase
 from app.keyboards.admin_menu import get_admin_keyboard
 
 class IsAdmin(Filter):
@@ -289,9 +289,12 @@ async def lookup_user_prompt(message: Message, state: FSMContext):
 
 @router.message(AdminState.lookup_user)
 async def lookup_user_data(message: Message, state: FSMContext):
-    user_id = int(message.text)
+    try:
+        user_id = int(message.text.strip())
+    except ValueError:
+        await message.answer("❌ Invalid User ID.")
+        return
     with get_session() as db:
-        from app.models import User, Purchase
         user = db.query(User).filter_by(telegram_id=user_id).first()
         if not user:
             await message.answer("❌ User not found.")
@@ -305,28 +308,42 @@ async def lookup_user_data(message: Message, state: FSMContext):
 @router.message(AdminState.choose_action, F.text == "📦 View Stock")
 async def view_stock_summary(message: Message, state: FSMContext):
     with get_session() as db:
-        from app.models import Product
         products = db.query(Product).all()
         if not products:
             await message.answer("❌ No products found.")
             return
-        lines = []
-        for p in products:
-            lines.append(f"{p.name}: Stock = {p.stock} | Price = ${p.price}")
-        await message.answer("📦 Product Inventory:\n\n" + "\n".join(lines))
+        text = "📦 Current Stock Overview:\n"
+        for product in products:
+            text += f"\n🛒 {product.name}\n"
+            for area in product.areas:
+                text += f"  📍 Area: {area.name}\n"
+                for amount in area.amounts:
+                    text += f"    🔹 {amount.label} – {amount.price}€"
+                    if amount.description:
+                        text += f"\n       ✏️ {amount.description}"
+                    if amount.image_file_id:
+                        text += "\n       🖼 Image attached"
+                    if amount.delivery_note:
+                        text += f"\n       📄 Note: {amount.delivery_note}"
+                    if amount.delivery_photos:
+                        text += f"\n       📸 Photos: {len(amount.delivery_photos.split(','))}"
+                    if amount.delivery_location:
+                        text += f"\n       📍 Location: {amount.delivery_location}"
+                    text += "\n"
+        await message.answer(text or "❌ No stock info available.")
+    await state.set_state(AdminState.choose_action)
 
 @router.message(AdminState.choose_action, F.text == "📊 Bot Stats")
 async def show_bot_stats(message: Message, state: FSMContext):
     with get_session() as db:
-        from app.models import User, Purchase, Product
         users = db.query(User).count()
         purchases = db.query(Purchase).count()
         total_sales = sum(p.product.price for p in db.query(Purchase).all() if p.product)
         products = db.query(Product).count()
-
     await message.answer(
-        f"📊 Stats:\n\n👥 Users: {users}\n🛍 Purchases: {purchases}\n📦 Products: {products}\n💵 Revenue: ${total_sales:.2f}"
+        f"📊 Stats:\n\n👥 Users: {users}\n🛍 Purchases: {purchases}\n📦 Products: {products}\n💵 Revenue: €{total_sales:.2f}"
     )
+    await state.set_state(AdminState.choose_action)
 
 @router.message(AdminState.choose_action, F.text == "🗑 Remove City")
 async def remove_city_prompt(message: Message, state: FSMContext):
