@@ -62,6 +62,8 @@ class Amount(Base):
     purchase_info = Column(Text, nullable=True)
     purchase_note = Column(String, nullable=True)
     description = Column(Text, default="")
+    delivery_photos = Column(Text, nullable=True)
+    delivery_location = Column(String, nullable=True)
     area = relationship("Area", back_populates="amounts")
     
 class Purchase(Base):

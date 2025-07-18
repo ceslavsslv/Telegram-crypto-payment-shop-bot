@@ -35,3 +35,7 @@ class AdminState(StatesGroup):
     edit_amount_description = State()
     edit_amount_note = State()
     edit_amount_remove_option = State() 
+    edit_delivery_step = State()
+    save_delivery_note = State()
+    edit_amount_remove_choice = State()
+    edit_amount_description_write = State()
