@@ -229,29 +229,6 @@ async def save_note(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer("✅ Saved post-purchase message.")
 
-@router.message(AdminState.choose_action, F.text == "🔄 Refund User")
-async def ask_user_id_for_refund(message: Message, state: FSMContext):
-    msg = "Enter User ID to refund:"
-    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="❌ Cancel")]],
-        resize_keyboard=True
-    ))
-    await state.set_state(AdminState.refund_user_id)
-
-@router.message(AdminState.refund_user_id)
-async def process_refund(message: Message, state: FSMContext):
-    user_id = int(message.text)
-    with get_session() as db:
-        from app.models import User
-        user = db.query(User).filter_by(telegram_id=user_id).first()
-        if not user:
-            await message.answer("❌ User not found.")
-        else:
-            user.balance += 10.0  # Or use state to specify amount
-            db.commit()
-            await message.answer(f"✅ Refunded $10 to user {user_id}.")
-    await state.set_state(AdminState.choose_action)
-
 @router.message(AdminState.choose_action, F.text == "💰 Edit Balance")
 async def ask_balance_user_id(message: Message, state: FSMContext):
     msg = "Enter User ID to change balance:"

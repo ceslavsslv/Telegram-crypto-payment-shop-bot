@@ -10,7 +10,7 @@ def get_admin_keyboard():
         ["🖼 Set Amount Image", "✏️ Set Amount Description"],
         ["📝 Set Delivery Note", "♻️ Remove Image/Note"],
         ["📝 Edit Purchase Info", "📦 View Stock"],
-        ["💰 Edit Balance", "🔄 Refund User"],
+        ["💰 Edit Balance"],
         ["🔍 Lookup User", "📊 Bot Stats"],
         ["⬅️ Exit Admin"]
     ]
