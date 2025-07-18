@@ -21,7 +21,7 @@ class City(Base):
     name = Column(String, unique=True)
     is_active = Column(Boolean, default=True)
 
-    products = relationship("Product", back_populates="city")
+    products = relationship("Product", back_populates="city", cascade="all, delete-orphan")
 
 class Product(Base):
     __tablename__ = "products"
@@ -35,7 +35,7 @@ class Product(Base):
     is_active = Column(Boolean, default=True)
 
     city = relationship("City", back_populates="products")
-
+    areas = relationship("Area", back_populates="product", cascade="all, delete-orphan")
 class Area(Base):
     __tablename__ = "areas"
 
@@ -46,8 +46,8 @@ class Area(Base):
     is_active = Column(Boolean, default=True)
 
     city = relationship("City")
-    product = relationship("Product")
-    amounts = relationship("Amount", back_populates="area")
+    product = relationship("Product", back_populates="areas")
+    amounts = relationship("Amount", back_populates="area", cascade="all, delete-orphan")
 
 
 class Amount(Base):
