@@ -8,13 +8,14 @@ from app.keyboards.common import get_menu_button_values
 from app.models import Product, Amount
 from aiogram.fsm.context import FSMContext
 from app.utils import texts
+from app.utils.texts import t
 
 router = Router()
 
 @router.callback_query(F.data == "pay_balance")
 async def handle_balance_payment(callback: types.CallbackQuery, state: FSMContext):
 
-    user_lang = get_user_lang(callback)
+    user_lang = t("KEY", callback)
     db = next(get_db())
     user = get_or_create_user(db, telegram_id=callback.from_user.id)
     data = await state.get_data()
