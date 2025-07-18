@@ -14,7 +14,7 @@ ADMIN_KB = ReplyKeyboardMarkup(
 )
 
 CANCEL_KB = ReplyKeyboardMarkup(
-    keyboard=[[KeyboardButton("❌ Cancel")]],
+    keyboard=[[KeyboardButton(text="❌ Cancel")]],
     resize_keyboard=True
 )
 #Vecais
