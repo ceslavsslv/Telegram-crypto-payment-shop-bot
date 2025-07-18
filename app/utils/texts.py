@@ -131,7 +131,7 @@ texts = {
     "INSUFFICIENT_FUNDS" : {
         "en": "❌ Insufficient balance.",
         "lv": "❌ Nepietiekama bilance.",
-        "ru": "❌ Недостаточно средств.",
+        "ru": "❌ Недостаточно средств."
     },
 
     "PURCHASE_SUCCESS" : {

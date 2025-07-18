@@ -15,32 +15,31 @@ router = Router()
 @router.callback_query(F.data == "pay_balance")
 async def handle_balance_payment(callback: types.CallbackQuery, state: FSMContext):
 
-    user_lang = t("KEY", callback)
     db = next(get_db())
     user = get_or_create_user(db, telegram_id=callback.from_user.id)
     data = await state.get_data()
     amount_id = data.get("amount_id")
 
     if not amount_id:
-        await callback.answer(texts.INVALID_SELECTION[user_lang], show_alert=True)
+        await callback.answer(t("INVALID_SELECTION", callback), show_alert=True)
         return
 
     with get_session() as session:
         amount = session.query(Amount).filter_by(id=amount_id).first()
 
         if not amount:
-            await callback.answer(texts.NO_SUCH_AMOUNT[user_lang], show_alert=True)
+            await callback.answer(t("NO_SUCH_AMOUNT", callback), show_alert=True)
             return
 
         if hasattr(amount, "stock") and amount.stock is not None and amount.stock < 1:
-            await callback.answer(texts.OUT_OF_STOCK[user_lang], show_alert=True)
+            await callback.answer(t("OUT_OF_STOCK", callback), show_alert=True)
             return
 
         if not deduct_balance(session, user, amount.price):
-            await callback.answer(texts.INSUFFICIENT_FUNDS[user_lang], show_alert=True)
+            await callback.answer(t("INSUFFICIENT_FUNDS", callback), show_alert=True)
             return
 
-        purchase_text = f"{texts.PURCHASE_SUCCESS[user_lang]}\n\n{amount.purchase_info or ''}"
+        purchase_text = f"{t('PURCHASE_SUCCESS', callback)}\n\n{amount.purchase_info or ''}"
         add_purchase(session, user.id, amount.product_id, purchase_text)
 
         if amount.image_file_id:
