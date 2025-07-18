@@ -481,7 +481,7 @@ async def remove_amount_prompt(message: Message, state: FSMContext):
         await message.answer("⚠️ No amounts found.")
         return
     msg = "📋 Enter amount ID to remove:\n" + "\n".join(
-        f"{a.id}. {a.price}€ (Area ID: {a.area_id})" for a in amounts
+        f"{a.id}. {a.price}€ (Area ID: {a.area_id}. {a.area.name})" for a in amounts
     )
     await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="❌ Cancel")]],
