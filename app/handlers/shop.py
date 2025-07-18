@@ -179,7 +179,7 @@ async def back_to_amounts(callback: CallbackQuery, state: FSMContext):
     area_id = data.get("area_id")
     with get_session() as db:
         amounts = db.query(Amount).filter_by(area_id=area_id).all()
-    buttons = [{"label": f"{amt.amount}€", "data": f"amount:{amt.id}"} for amt in amounts]
+    buttons = [{"label": f"{amt.label} - {amt.price}€", "data": f"amount:{amt.id}"} for amt in amounts]
     buttons.append({"label": t("BACK", callback), "data": "back_to_areas"})
     buttons.append({"label": t("MAIN_MENU", callback), "data": "back_to_cities"})
     await state.set_state(ShopState.amount)
