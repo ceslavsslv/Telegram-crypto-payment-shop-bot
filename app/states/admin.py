@@ -10,9 +10,11 @@ class AdminState(StatesGroup):
     product_city = State()
     product_name = State()
 
+    add_area_city_chosen = State()
     area_product = State()
     area_name = State()
 
+    add_amount_city_chosen = State()
     amount_area = State()
     amount_label = State()
     amount_price = State()

@@ -116,31 +116,47 @@ async def add_product_save(message: Message, state: FSMContext):
     await state.set_state(AdminState.choose_action)
 
 #new ➕ Add Area Flow
-
 @router.message(AdminState.choose_action, F.text == "➕ Add Area")
-async def add_area_prompt_product(message: Message, state: FSMContext):
+async def admin_add_area_choose_city(message: Message, state: FSMContext):
     with get_session() as db:
-        products = db.query(Product).all()
-    msg = "Select product ID:\n" + "\n".join(f"{p.id}. {p.name}" for p in products)
-    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        cities = db.query(City).all()
+    if not cities:
+        await message.answer("❌ No cities found.")
+        return
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text=city.name)] for city in cities] + [[KeyboardButton(text="❌ Cancel")]],
         resize_keyboard=True
-    ))
+    )
+    await message.answer("🏙 Select a city:", reply_markup=keyboard)
+    await state.set_state(AdminState.add_area_city_chosen)
+
+@router.message(AdminState.add_area_city_chosen)
+async def add_area_prompt_product(message: Message, state: FSMContext):
+    city_name = message.text.strip()
+    with get_session() as db:
+        city = db.query(City).filter_by(name=city_name).first()
+        if not city:
+            await message.answer("❌ City not found.")
+            return
+        await state.update_data(city_id=city.id)
+        products = db.query(Product).filter_by(city_id=city.id).all()
+    if not products:
+        await message.answer("❌ No products in this city.")
+        return
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text=f"{p.name} (#{p.id})")] for p in products] + [[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    )
+    await message.answer("🛒 Select product ID:", reply_markup=keyboard)
     await state.set_state(AdminState.area_product)
 
 @router.message(AdminState.area_product)
 async def add_area_prompt_name(message: Message, state: FSMContext):
     try:
-        product_id = int(message.text)
+        product_id = int(re.search(r"#(\d+)", message.text).group(1))
     except ValueError:
         await message.answer("❌ Invalid product ID. Please enter a number.")
         return
-
-    with get_session() as db:
-        product = db.query(Product).filter(Product.id == product_id).first()
-        if not product:
-            await message.answer("❌ Product not found. Try again.")
-            return
     await state.update_data(product_id=product_id)
     await message.answer("📝 Enter area/district name:", reply_markup=ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="❌ Cancel")]],
@@ -152,7 +168,7 @@ async def add_area_prompt_name(message: Message, state: FSMContext):
 async def add_area_save(message: Message, state: FSMContext):
     data = await state.get_data()
     with get_session() as db:
-        db.add(Area(name=message.text, product_id=data["product_id"]))
+        db.add(Area(name=message.text.strip(), product_id=data["product_id"]))
         db.commit()
     await state.clear()
     await message.answer("✅ Area added.", reply_markup=get_admin_keyboard())
@@ -161,41 +177,56 @@ async def add_area_save(message: Message, state: FSMContext):
 # ➕ Add Amount Flow
 
 @router.message(AdminState.choose_action, F.text == "➕ Add Amount")
-async def add_amount_prompt_area(message: Message, state: FSMContext):
+async def admin_add_amount_choose_city(message: Message, state: FSMContext):
     with get_session() as db:
-        areas = db.query(Area).all()
+        cities = db.query(City).all()
+    if not cities:
+        await message.answer("❌ No cities available.")
+        return
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text=city.name)] for city in cities] + [[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True
+    )
+    await message.answer("🏙 Choose a city:", reply_markup=keyboard)
+    await state.set_state(AdminState.add_amount_city_chosen)
+
+@router.message(AdminState.add_amount_city_chosen)
+async def add_amount_prompt_area(message: Message, state: FSMContext):
+    city_name = message.text.strip()
+    with get_session() as db:
+        city = db.query(City).filter_by(name=city_name).first()
+        if not city:
+            await message.answer("❌ City not found.")
+            return
+        areas = db.query(Area).join(Product).filter(Product.city_id == city.id).all()
     if not areas:
         await message.answer("❌ No areas found. Add an area first.")
         return
-    msg = "Select area ID:\n" + "\n".join(f"{a.id}. {a.name}" for a in areas)
-    await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+    await state.update_data(city_id=city.id)
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text=f"{a.name} (#{a.id})")] for a in areas] + [[KeyboardButton(text="❌ Cancel")]],
         resize_keyboard=True
-    ))
+    )
+    await message.answer("📍 Select area ID:", reply_markup=keyboard)
     await state.set_state(AdminState.amount_area)
 
 @router.message(AdminState.amount_area)
 async def add_amount_prompt_label(message: Message, state: FSMContext):
     try:
-        area_id = int(message.text)
-    except ValueError:
+        area_id = int(re.search(r"#(\d+)", message.text).group(1))
+    except:
         await message.answer("❌ Invalid area ID. Please enter a number.")
         return
-    with get_session() as db:
-        area = db.query(Area).filter(Area.id == area_id).first()
-        if not area:
-            await message.answer("❌ Area not found. Try again.")
-            return
     await state.update_data(area_id=area_id)
-    await message.answer("📝 Enter amount label (1peace, 10EUR, etc.):", reply_markup=ReplyKeyboardMarkup(
+    await message.answer("📝 Enter amount label (1peace, 0.5KG, etc.):", reply_markup=ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="❌ Cancel")]],
         resize_keyboard=True
     ))
-    await state.set_state(AdminState.amount_label)
+    await state.set_state(AdminState.amount_label)  
 
 @router.message(AdminState.amount_label)
 async def add_amount_prompt_price(message: Message, state: FSMContext):
-    await state.update_data(label=message.text)
+    await state.update_data(label=message.text.strip())
     await message.answer("💰 Enter price (EUR):", reply_markup=ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="❌ Cancel")]], resize_keyboard=True
     ))
@@ -203,12 +234,12 @@ async def add_amount_prompt_price(message: Message, state: FSMContext):
 
 @router.message(AdminState.amount_price)
 async def add_amount_save(message: Message, state: FSMContext):
+    data = await state.get_data()
     try:
         price = float(message.text.replace(",", "."))
     except ValueError:
         await message.answer("❌ Invalid price. Please enter a numeric value.")
         return
-    data = await state.get_data()
     with get_session() as db:
         db.add(Amount(area_id=data["area_id"], label=data["label"], price=price))
         db.commit()
