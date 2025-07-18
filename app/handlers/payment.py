@@ -40,7 +40,7 @@ async def handle_balance_payment(callback: types.CallbackQuery, state: FSMContex
             await callback.answer(texts.INSUFFICIENT_FUNDS[user_lang], show_alert=True)
             return
 
-        purchase_text = f"{texts.PURCHASE_SUCCESS[user_lang]}\n\n{amount.purchase_note or ''}"
+        purchase_text = f"{texts.PURCHASE_SUCCESS[user_lang]}\n\n{amount.purchase_info or ''}"
         add_purchase(session, user.id, amount.product_id, purchase_text)
 
         if amount.image_file_id:

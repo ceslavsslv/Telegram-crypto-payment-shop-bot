@@ -51,6 +51,7 @@ class Area(Base):
 
 
 class Amount(Base):
+    purchase_info = Column(Text)
     purchase_note = Column(String, nullable=True)
 
     
