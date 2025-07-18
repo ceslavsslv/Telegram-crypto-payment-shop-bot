@@ -38,13 +38,39 @@ class AdminState(StatesGroup):
     edit_amount_remove_option = State() 
 '''
     choose_action = State()
-    # dynamically generated below for CRUD
+
+    # City
     city_add = State()
     city_remove = State()
+
+    # Product
+    product_choose_city = State()
     product_add = State()
     product_remove = State()
+
+    # Area
+    area_choose_city = State()
     area_add = State()
     area_remove = State()
+
+    # Amount
+    amount_choose_city = State()
+    amount_choose_area = State()
+    amount_choose_product = State()
     amount_add = State()
     amount_remove = State()
+
+    # Image / Description / Delivery Note
+    image_choose_amount = State()
+    set_image = State()
+    set_description = State()
+    set_delivery_note = State()
+    remove_image_or_note = State()
+
+    # Other
     broadcast_text = State()
+    balance_user = State()
+    balance_amount = State()
+    refund_user = State()
+    lookup_user = State()
+    bot_stats = State()

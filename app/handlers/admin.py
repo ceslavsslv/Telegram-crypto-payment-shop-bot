@@ -1,6 +1,6 @@
 # handlers/admin.py
 from aiogram import Router, types, F, Bot
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command, Filter
@@ -18,101 +18,388 @@ class IsAdmin(Filter):
 router = Router()
 router.message.filter(IsAdmin())
 
+async def reset_to_menu(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("Back to admin menu.", reply_markup=ADMIN_KB)
+    await state.set_state(AdminState.choose_action)
+
 @router.message(Command("admin"))
 async def cmd_admin(message: Message, state: FSMContext):
     """Entry point for admins to open the panel."""
     await message.answer("🔧 Welcome to the Admin Panel.", reply_markup=ADMIN_KB)
     await state.set_state(AdminState.choose_action)
 
-async def reset_to_menu(message: Message, state: FSMContext):
+@router.message(AdminState.choose_action, F.text == "⬅️ Exit Admin")
+async def exit_admin(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer("Back to admin menu.", reply_markup=ADMIN_KB)
-    await state.set_state(AdminState.choose_action)
+    await message.answer("👋 Exited admin mode.", reply_markup=ReplyKeyboardRemove())
 
-def register_crud(
-    model,
-    add_label: str,
-    remove_label: str,
-    state_add: State,
-    state_remove: State,
-    display_field: str = "name",
-):
-    # Add Action
-    @router.message(AdminState.choose_action, F.text == add_label)
-    async def _(message: Message, state: FSMContext):
-        await message.answer(f"➕ Enter new {model.__name__.lower()} {display_field}:", reply_markup=CANCEL_KB)
-        await state.set_state(state_add)
+@router.message(F.text == "❌ Cancel", AdminState)  # catches ❌ in any state
+async def cancel_any(message: Message, state: FSMContext):
+    await message.answer("❌ Action canceled.", reply_markup=ADMIN_KB)
+    await reset_to_menu(message, state)
 
-    @router.message(state_add)
-    async def _(message: Message, state: FSMContext):
-        value = message.text.strip()
-        with get_session() as db:
-            exists = db.query(model).filter(getattr(model, display_field) == value).first()
-            if exists:
-                await message.answer(f"⚠️ {model.__name__} '{value}' already exists.")
-            else:
-                db.add(model(**{display_field: value}))
-                db.commit()
-                await message.answer(f"✅ {model.__name__} '{value}' added.")
-        await reset_to_menu(message, state)
+# --- Add / Remove City ------------------------------------
+@router.message(AdminState.choose_action, F.text == "➕ Add City")
+async def add_city_start(message: Message, state: FSMContext):
+    await message.answer("➕ Enter new city name:", reply_markup=CANCEL_KB)
+    await state.set_state(AdminState.city_add)
 
-    # Remove Action
-    @router.message(AdminState.choose_action, F.text == remove_label)
-    async def _(message: Message, state: FSMContext):
-        with get_session() as db:
-            items = db.query(model).all()
-        if not items:
-            await message.answer(f"⚠️ No {model.__name__.lower()}s found.")
-            return await reset_to_menu(message, state)
-        keyboard = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
-            [KeyboardButton(str(getattr(obj, 'id')) + f" – {getattr(obj, display_field)}")] for obj in items
-        ] + [[KeyboardButton("❌ Cancel")]])
-        await message.answer(f"🗑 Select {model.__name__.lower()} ID to remove:", reply_markup=keyboard)
-        await state.set_state(state_remove)
-
-    @router.message(state_remove)
-    async def _(message: Message, state: FSMContext):
-        if message.text == "❌ Cancel":
-            return await reset_to_menu(message, state)
-        try:
-            obj_id = int(message.text.split()[0])
-        except ValueError:
-            return await message.answer("⚠️ Invalid ID. Try again or cancel.")
-        with get_session() as db:
-            obj = db.query(model).get(obj_id)
-            if not obj:
-                return await message.answer("⚠️ Not found. Try again or cancel.")
-            db.delete(obj)
+@router.message(AdminState.city_add)
+async def add_city_finish(message: Message, state: FSMContext):
+    name = message.text.strip()
+    with get_session() as db:
+        exists = db.query(City).filter(City.name == name).first()
+        if exists:
+            await message.answer("⚠️ That city already exists.")
+        else:
+            db.add(City(name=name))
             db.commit()
-            await message.answer(f"✅ Removed {model.__name__} '{getattr(obj, display_field)}'.")
-        await reset_to_menu(message, state)
+            await message.answer(f"✅ City '{name}' added.")
+    await reset_to_menu(message, state)
 
-for cfg in [
-    (City, "➕ Add City", "🗑 Remove City", AdminState.city_add, AdminState.city_remove),
-    (Product, "➕ Add Product", "🗑 Remove Product", AdminState.product_add, AdminState.product_remove),
-    (Area, "➕ Add Area", "🗑 Remove Area", AdminState.area_add, AdminState.area_remove),
-    (Amount, "➕ Add Amount", "🗑 Remove Amount", AdminState.amount_add, AdminState.amount_remove),
-]:
-    register_crud(*cfg)
+@router.message(AdminState.choose_action, F.text == "🗑 Remove City")
+async def remove_city_start(message: Message, state: FSMContext):
+    with get_session() as db:
+        cities = db.query(City).all()
+    if not cities:
+        await message.answer("⚠️ No cities to remove.")
+        return await reset_to_menu(message, state)
 
+    kb = []
+    for c in cities:
+        kb.append([f"{c.id} – {c.name}"])
+    kb.append(["❌ Cancel"])
+    await message.answer("🗑 Select city to remove:", reply_markup=CANCEL_KB.replace(  # build keyboard
+        keyboard=kb))
+    await state.set_state(AdminState.city_remove)
+
+@router.message(AdminState.city_remove)
+async def remove_city_finish(message: Message, state: FSMContext):
+    if message.text == "❌ Cancel":
+        return await cancel_any(message, state)
+    try:
+        cid = int(message.text.split("–")[0].strip())
+    except:
+        return await message.answer("⚠️ Invalid selection. Try again or Cancel.")
+    with get_session() as db:
+        city = db.get(City, cid)
+        if not city:
+            return await message.answer("⚠️ Not found. Try again or Cancel.")
+        name = city.name
+        db.delete(city); db.commit()
+        await message.answer(f"✅ City '{name}' removed.")
+    await reset_to_menu(message, state)
+
+# --- Add / Remove Area ------------------------------------
+@router.message(AdminState.choose_action, F.text == "➕ Add Area")
+async def add_area_start(message: Message, state: FSMContext):
+    # choose city first
+    with get_session() as db:
+        cities = db.query(City).all()
+    kb = [[f"{c.id} – {c.name}"] for c in cities] + [["❌ Cancel"]]
+    await message.answer("➕ Select city for the new area:", reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True))
+    await state.set_state(AdminState.area_choose_city)
+
+@router.message(AdminState.area_choose_city)
+async def add_area_city_chosen(message: Message, state: FSMContext):
+    if message.text == "❌ Cancel":
+        return await cancel_any(message, state)
+    try:
+        cid = int(message.text.split("–")[0].strip())
+    except:
+        return await message.answer("⚠️ Invalid. Try again or Cancel.")
+    await state.update_data(city_id=cid)
+    await message.answer("➕ Enter new area name:", reply_markup=CANCEL_KB)
+    await state.set_state(AdminState.area_add)
+
+@router.message(AdminState.area_add)
+async def add_area_finish(message: Message, state: FSMContext):
+    data = await state.get_data()
+    name = message.text.strip()
+    with get_session() as db:
+        exists = db.query(Area).filter(Area.name==name, Area.city_id==data["city_id"]).first()
+        if exists:
+            await message.answer("⚠️ That area already exists in this city.")
+        else:
+            db.add(Area(name=name, city_id=data["city_id"]))
+            db.commit()
+            await message.answer(f"✅ Area '{name}' added.")
+    await reset_to_menu(message, state)
+
+@router.message(AdminState.choose_action, F.text == "🗑 Remove Area")
+async def remove_area_start(message: Message, state: FSMContext):
+    with get_session() as db:
+        areas = db.query(Area).all()
+    if not areas:
+        return await reset_to_menu(message, state)
+    kb = [[f"{a.id} – {a.name} ({a.city.name})"] for a in areas] + [["❌ Cancel"]]
+    await message.answer("🗑 Select area to remove:", reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True))
+    await state.set_state(AdminState.area_remove)
+
+@router.message(AdminState.area_remove)
+async def remove_area_finish(message: Message, state: FSMContext):
+    if message.text == "❌ Cancel":
+        return await cancel_any(message, state)
+    try:
+        aid = int(message.text.split("–")[0].strip())
+    except:
+        return await message.answer("⚠️ Invalid. Try again or Cancel.")
+    with get_session() as db:
+        area = db.get(Area, aid)
+        if not area:
+            return await message.answer("⚠️ Not found. Try again or Cancel.")
+        name = area.name
+        db.delete(area); db.commit()
+        await message.answer(f"✅ Area '{name}' removed.")
+    await reset_to_menu(message, state)
+
+# --- Add / Remove Product ---------------------------------
+@router.message(AdminState.choose_action, F.text == "➕ Add Product")
+async def add_product_start(message: Message, state: FSMContext):
+    # choose city
+    with get_session() as db:
+        cities = db.query(City).all()
+    kb = [[f"{c.id} – {c.name}"] for c in cities] + [["❌ Cancel"]]
+    await message.answer("➕ Select city for the new product:", reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True))
+    await state.set_state(AdminState.product_choose_city)
+
+@router.message(AdminState.product_choose_city)
+async def add_product_city_chosen(message: Message, state: FSMContext):
+    if message.text == "❌ Cancel":
+        return await cancel_any(message, state)
+    try:
+        cid = int(message.text.split("–")[0].strip())
+    except:
+        return await message.answer("⚠️ Invalid. Try again or Cancel.")
+    await state.update_data(city_id=cid)
+    await message.answer("➕ Enter new product name:", reply_markup=CANCEL_KB)
+    await state.set_state(AdminState.product_add)
+
+@router.message(AdminState.product_add)
+async def add_product_finish(message: Message, state: FSMContext):
+    data = await state.get_data()
+    name = message.text.strip()
+    with get_session() as db:
+        exists = db.query(Product).filter(Product.name==name, Product.city_id==data["city_id"]).first()
+        if exists:
+            await message.answer("⚠️ That product already exists in this city.")
+        else:
+            db.add(Product(name=name, city_id=data["city_id"]))
+            db.commit()
+            await message.answer(f"✅ Product '{name}' added.")
+    await reset_to_menu(message, state)
+
+@router.message(AdminState.choose_action, F.text == "🗑 Remove Product")
+async def remove_product_start(message: Message, state: FSMContext):
+    with get_session() as db:
+        prods = db.query(Product).all()
+    if not prods:
+        return await reset_to_menu(message, state)
+    kb = [[f"{p.id} – {p.name} ({p.city.name})"] for p in prods] + [["❌ Cancel"]]
+    await message.answer("🗑 Select product to remove:", reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True))
+    await state.set_state(AdminState.product_remove)
+
+@router.message(AdminState.product_remove)
+async def remove_product_finish(message: Message, state: FSMContext):
+    if message.text == "❌ Cancel":
+        return await cancel_any(message, state)
+    try:
+        pid = int(message.text.split("–")[0].strip())
+    except:
+        return await message.answer("⚠️ Invalid. Try again or Cancel.")
+    with get_session() as db:
+        prod = db.get(Product, pid)
+        if not prod:
+            return await message.answer("⚠️ Not found. Try again or Cancel.")
+        name = prod.name
+        db.delete(prod); db.commit()
+        await message.answer(f"✅ Product '{name}' removed.")
+    await reset_to_menu(message, state)
+
+# --- Add / Remove Amount ----------------------------------
+@router.message(AdminState.choose_action, F.text == "➕ Add Amount")
+async def add_amount_start(message: Message, state: FSMContext):
+    # choose city
+    with get_session() as db:
+        cities = db.query(City).all()
+    kb = [[f"{c.id} – {c.name}"] for c in cities] + [["❌ Cancel"]]
+    await message.answer("➕ Select city:", reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True))
+    await state.set_state(AdminState.amount_choose_city)
+
+@router.message(AdminState.amount_choose_city)
+async def add_amount_city_chosen(message: Message, state: FSMContext):
+    if message.text=="❌ Cancel":
+        return await cancel_any(message, state)
+    cid = int(message.text.split("–")[0].strip())
+    await state.update_data(city_id=cid)
+    # choose area
+    with get_session() as db:
+        areas = db.query(Area).filter(Area.city_id==cid).all()
+    kb = [[f"{a.id} – {a.name}"] for a in areas] + [["❌ Cancel"]]
+    await message.answer("➕ Select area:", reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True))
+    await state.set_state(AdminState.amount_choose_area)
+
+@router.message(AdminState.amount_choose_area)
+async def add_amount_area_chosen(message: Message, state: FSMContext):
+    if message.text=="❌ Cancel":
+        return await cancel_any(message, state)
+    aid = int(message.text.split("–")[0].strip())
+    await state.update_data(area_id=aid)
+    # choose product
+    with get_session() as db:
+        prods = db.query(Product).filter(Product.area_id==aid).all()
+    kb = [[f"{p.id} – {p.name}"] for p in prods] + [["❌ Cancel"]]
+    await message.answer("➕ Select product:", reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True))
+    await state.set_state(AdminState.amount_choose_product)
+
+@router.message(AdminState.amount_choose_product)
+async def add_amount_product_chosen(message: Message, state: FSMContext):
+    if message.text=="❌ Cancel":
+        return await cancel_any(message, state)
+    pid = int(message.text.split("–")[0].strip())
+    await state.update_data(product_id=pid)
+    await message.answer("➕ Enter amount (numeric):", reply_markup=CANCEL_KB)
+    await state.set_state(AdminState.amount_add)
+
+@router.message(AdminState.amount_add)
+async def add_amount_finish(message: Message, state: FSMContext):
+    data = await state.get_data()
+    try:
+        qty = float(message.text)
+    except:
+        return await message.answer("⚠️ Not a number. Try again or ❌ Cancel.")
+    with get_session() as db:
+        exists = db.query(Amount).filter_by(
+            product_id=data["product_id"], quantity=qty
+        ).first()
+        if exists:
+            await message.answer("⚠️ That amount entry already exists.")
+        else:
+            db.add(Amount(
+                product_id=data["product_id"],
+                quantity=qty
+            ))
+            db.commit()
+            await message.answer(f"✅ Amount {qty} added.")
+    await reset_to_menu(message, state)
+
+@router.message(AdminState.choose_action, F.text == "🗑 Remove Amount")
+async def remove_amount_start(message: Message, state: FSMContext):
+    with get_session() as db:
+        amts = db.query(Amount).all()
+    if not amts:
+        return await reset_to_menu(message, state)
+    kb = [[f"{a.id} – {a.quantity} ({a.product.name})"] for a in amts] + [["❌ Cancel"]]
+    await message.answer("🗑 Select amount to remove:", reply_markup=ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True))
+    await state.set_state(AdminState.amount_remove)
+
+@router.message(AdminState.amount_remove)
+async def remove_amount_finish(message: Message, state: FSMContext):
+    if message.text=="❌ Cancel":
+        return await cancel_any(message, state)
+    aid = int(message.text.split("–")[0].strip())
+    with get_session() as db:
+        amt = db.get(Amount, aid)
+        if not amt:
+            return await message.answer("⚠️ Not found. Try again or ❌ Cancel.")
+        qty, name = amt.quantity, amt.product.name
+        db.delete(amt); db.commit()
+        await message.answer(f"✅ Removed amount {qty} of '{name}'.")
+    await reset_to_menu(message, state)
+
+# --- View Stock --------------------------------------------
+@router.message(AdminState.choose_action, F.text == "📦 View Stock")
+async def view_stock(message: Message, state: FSMContext):
+    with get_session() as db:
+        entries = db.query(Amount).all()
+    lines = []
+    for a in entries:
+        city = a.product.area.city.name
+        area = a.product.area.name
+        prod = a.product.name
+        lines.append(f"{a.id}: {city} / {area} / {prod} — {a.quantity}")
+    if not lines:
+        await message.answer("📦 No stock entries.")
+    else:
+        await message.answer("📦 Current stock:\n" + "\n".join(lines))
+    await reset_to_menu(message, state)
+
+# --- Broadcast ---------------------------------------------
 @router.message(AdminState.choose_action, F.text == "📣 Broadcast")
 async def ask_broadcast(message: Message, state: FSMContext):
-    await message.answer("✉️ Send me the message to broadcast to all users:", reply_markup=CANCEL_KB)
+    await message.answer("✉️ Enter broadcast message:", reply_markup=CANCEL_KB)
     await state.set_state(AdminState.broadcast_text)
 
 @router.message(AdminState.broadcast_text)
 async def do_broadcast(message: Message, state: FSMContext, bot: Bot):
     if message.text == "❌ Cancel":
-        return await reset_to_menu(message, state)
+        return await cancel_any(message, state)
     text = message.text
     with get_session() as db:
-        user_ids = [u.telegram_id for u in db.query(User).all()]
-    for uid in user_ids:
+        users = [u.telegram_id for u in db.query(User).all()]
+    for uid in users:
         try:
             await bot.send_message(uid, text)
         except:
             pass
     await message.answer("✅ Broadcast sent.")
+    await reset_to_menu(message, state)
+
+# --- Edit Balance ------------------------------------------
+@router.message(AdminState.choose_action, F.text == "💰 Edit Balance")
+async def ask_balance_user(message: Message, state: FSMContext):
+    await message.answer("💰 Enter user ID to edit balance:", reply_markup=CANCEL_KB)
+    await state.set_state(AdminState.balance_user)
+
+@router.message(AdminState.balance_user)
+async def ask_balance_amount(message: Message, state: FSMContext):
+    if message.text=="❌ Cancel":
+        return await cancel_any(message, state)
+    await state.update_data(user_id=int(message.text))
+    await message.answer("💰 Enter new balance amount:", reply_markup=CANCEL_KB)
+    await state.set_state(AdminState.balance_amount)
+
+@router.message(AdminState.balance_amount)
+async def do_edit_balance(message: Message, state: FSMContext):
+    if message.text=="❌ Cancel":
+        return await cancel_any(message, state)
+    data = await state.get_data()
+    new_bal = float(message.text)
+    with get_session() as db:
+        user = db.get(User, data["user_id"])
+        user.balance = new_bal
+        db.commit()
+    await message.answer(f"✅ Balance set to {new_bal} for user {data['user_id']}.")
+    await reset_to_menu(message, state)
+
+# --- Lookup User -------------------------------------------
+@router.message(AdminState.choose_action, F.text == "🔍 Lookup User")
+async def ask_lookup_user(message: Message, state: FSMContext):
+    await message.answer("🔍 Enter user ID to look up:", reply_markup=CANCEL_KB)
+    await state.set_state(AdminState.lookup_user)
+
+@router.message(AdminState.lookup_user)
+async def do_lookup_user(message: Message, state: FSMContext):
+    if message.text=="❌ Cancel":
+        return await cancel_any(message, state)
+    uid = int(message.text)
+    with get_session() as db:
+        user = db.get(User, uid)
+    if not user:
+        await message.answer("⚠️ User not found.")
+    else:
+        await message.answer(f"👤 User {uid}: balance={user.balance}, joined={user.created_at}")
+    await reset_to_menu(message, state)
+
+# --- Bot Stats ---------------------------------------------
+@router.message(AdminState.choose_action, F.text == "📊 Bot Stats")
+async def do_bot_stats(message: Message, state: FSMContext):
+    from sqlalchemy import func
+    with get_session() as db:
+        user_count = db.query(func.count(User.id)).scalar()
+        amount_count = db.query(func.count(Amount.id)).scalar()
+    await message.answer(f"📊 Stats:\n• Users: {user_count}\n• Stock entries: {amount_count}")
     await reset_to_menu(message, state)
 
 #vecais kods 
