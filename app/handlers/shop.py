@@ -25,8 +25,7 @@ async def shopping_callback(callback: CallbackQuery, state: FSMContext):
     await start_shopping(callback, state)
 
 @router.callback_query(F.data == "shopping")
-async def start_shopping(callback: CallbackQuery, state: FSMContext):
-    await start_shopping(callback, state)   
+async def start_shopping(callback: CallbackQuery, state: FSMContext): 
     with get_session() as db:
         cities = db.query(City).filter_by(is_active=True).all()
     if not cities:
