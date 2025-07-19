@@ -5,7 +5,7 @@ from app.database import get_db, get_session
 from app.utils.helpers import get_or_create_user, get_product, deduct_balance, add_purchase
 from app.utils.btcpay import create_invoice
 from app.keyboards.common import get_menu_button_values
-from app.models import Product, Amount
+from app.models import Product, Amount, Purchase
 from aiogram.fsm.context import FSMContext
 from app.utils import texts
 from app.utils.texts import t
@@ -39,17 +39,28 @@ async def handle_balance_payment(callback: types.CallbackQuery, state: FSMContex
             await callback.answer(t("INSUFFICIENT_FUNDS", callback), show_alert=True)
             return
 
-        purchase_text = f"{t('PURCHASE_SUCCESS', callback)}\n\n{amount.purchase_info or ''}"
-        add_purchase(session, user.id, amount.id, purchase_text)
+        amount.stock -= 1
+        if amount.stock == 0:
+            amount.is_active = False
+        session.commit()
 
-        if amount.image_file_id:
-            await callback.message.answer_photo(
-                photo=amount.image_file_id,
-                caption=purchase_text
-            )
-        else:
-            await callback.message.answer(purchase_text)
+        purchase = Purchase(
+            user_id=user.id,
+            amount_id=amount.id,
+            price=amount.price,
+        )
+        session.add(purchase)
+        session.commit()
 
+        delivery_msg = f"{amount.purchase_note or ''}"
+        if amount.delivery_location:
+            delivery_msg += f"\n📍 {amount.delivery_location}"
+        if amount.delivery_photos:
+            for photo in amount.delivery_photos.split(";"):
+                await callback.message.answer_photo(photo.strip())
+        if delivery_msg.strip():
+            await callback.message.answer(delivery_msg)
+        await callback.answer(t("PAYMENT_SUCCESSFUL", callback), show_alert=True)
         await state.clear()
 
 @router.message(F.text.in_(get_menu_button_values("add_funds")))

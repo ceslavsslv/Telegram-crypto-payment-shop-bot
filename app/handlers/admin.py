@@ -340,29 +340,24 @@ async def lookup_user_data(message: Message, state: FSMContext):
 @router.message(AdminState.choose_action, F.text == "📦 View Stock")
 async def view_stock_summary(message: Message, state: FSMContext):
     with get_session() as db:
-        products = db.query(Product).all()
-        if not products:
-            await message.answer("❌ No products found.")
+        cities = db.query(City).filter_by(is_active=True).all()
+        if not cities:
+            await message.answer("❌ No cities found.")
             return
-        text = "📦 Current Stock Overview:\n"
-        for product in products:
-            text += f"\n🛒 {product.name}\n"
-            for area in product.areas:
-                text += f"  📍 Area: {area.name}\n"
-                for amount in area.amounts:
-                    text += f"    🔹 {amount.label} – {amount.price}€"
-                    if amount.description:
-                        text += f"\n       ✏️ {amount.description}"
-                    if amount.image_file_id:
-                        text += "\n       🖼 Image attached"
-                    if amount.purchase_note:
-                        text += f"\n       📄 Note: {amount.purchase_note}"
-                    if amount.delivery_photos:
-                        text += f"\n       📸 Photos: {len(amount.delivery_photos.split(','))}"
-                    if amount.delivery_location:
-                        text += f"\n       📍 Location: {amount.delivery_location}"
-                    text += "\n"
-        await message.answer(text or "❌ No stock info available.")
+
+        result = "📦 <b>Stock Overview</b>\n\n"
+        for city in cities:
+            result += f"🏙 <b>{city.name}</b>\n"
+            for product in city.products:
+                result += f"  └ 📦 <b>{product.name}</b>\n"
+                for area in product.areas:
+                    result += f"     └ 🌍 {area.name}\n"
+                    for amt in area.amounts:
+                        status = "✅" if amt.stock > 0 else "❌"
+                        result += f"        └ {status} {amt.label}: {amt.stock} pcs - {amt.price}€\n"
+            result += "\n"
+
+    await message.answer(result or "❌ Nothing found.", parse_mode="HTML")
     await state.set_state(AdminState.choose_action)
 
 @router.message(AdminState.choose_action, F.text == "📊 Bot Stats")

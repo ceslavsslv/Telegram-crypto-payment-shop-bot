@@ -36,6 +36,7 @@ class Product(Base):
 
     city = relationship("City", back_populates="products")
     areas = relationship("Area", back_populates="product", cascade="all, delete-orphan")
+
 class Area(Base):
     __tablename__ = "areas"
 
@@ -48,7 +49,6 @@ class Area(Base):
     city = relationship("City")
     product = relationship("Product", back_populates="areas")
     amounts = relationship("Amount", back_populates="area", cascade="all, delete-orphan")
-
 
 class Amount(Base):
     __tablename__ = "amounts"
@@ -64,6 +64,8 @@ class Amount(Base):
     description = Column(Text, default="")
     delivery_photos = Column(Text, nullable=True)
     delivery_location = Column(String, nullable=True)
+    stock = Column(Integer, default=0)
+
     area = relationship("Area", back_populates="amounts")
     
 class Purchase(Base):
