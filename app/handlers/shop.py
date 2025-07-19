@@ -20,6 +20,7 @@ async def shopping_text(message: Message, state: FSMContext):
     class FakeCallback:
         def __init__(self, message):
             self.message = message
+            self.from_user = message.from_user
         async def answer(self):
             pass
     fake_cb = FakeCallback(message)
