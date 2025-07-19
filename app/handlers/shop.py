@@ -16,6 +16,10 @@ def create_inline_keyboard(buttons):
         [InlineKeyboardButton(text=btn['label'], callback_data=btn['data'])] for btn in buttons
     ])
 
+@router.message(F.text.in_(get_menu_button_values("shopping")))
+async def shopping_text(callback: CallbackQuery, state: FSMContext):
+    await start_shopping(callback, state)
+
 @router.callback_query(F.data == "shopping")
 async def start_shopping(callback: CallbackQuery, state: FSMContext): 
     with get_session() as db:
