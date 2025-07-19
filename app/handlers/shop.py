@@ -17,31 +17,31 @@ def create_inline_keyboard(buttons):
     ])
 
 @router.message(F.text.in_(get_menu_button_values("shopping")))
-async def start_shopping(source: Union[Message, CallbackQuery], state: FSMContext):
+async def shopping_text(message: Message, state: FSMContext):
+    await start_shopping(message, state)
+
+@router.callback_query(F.data == "shopping")
+async def shopping_callback(callback: CallbackQuery, state: FSMContext):
+    await start_shopping(callback, state)
+
+@router.callback_query(F.data == "shopping")
+async def start_shopping(callback: CallbackQuery, state: FSMContext):
+    await start_shopping(callback, state)   
     with get_session() as db:
         cities = db.query(City).filter_by(is_active=True).all()
     if not cities:
-        text = t("NO_CITIES", source)
-        if isinstance(source, CallbackQuery):
-            await source.message.edit_text(text)
-        else:
-            await source.answer(text)
+        await callback.message.edit_text(t("NO_CITIES", callback))
         return
     buttons = [{"label": city.name, "data": f"city:{city.id}"} for city in cities]
-    markup = create_inline_keyboard(buttons)
     await state.set_state(ShopState.city)
-    text = t("CHOOSE_CITY", source)
-    if isinstance(source, CallbackQuery):
-        try:
-            await source.message.edit_text(text, reply_markup=markup)
-        except Exception:
-            await source.message.delete()
-            await source.message.answer(text, reply_markup=markup)
-        await source.answer()
-    else:
-        await source.answer(text, reply_markup=markup)
+    try:
+        await callback.message.edit_text(t("CHOOSE_CITY", callback), reply_markup=create_inline_keyboard(buttons))
+    except Exception:
+        await callback.message.delete()
+        await callback.message.answer(t("CHOOSE_CITY", callback), reply_markup=create_inline_keyboard(buttons))
+    await callback.answer()
 
-@router.callback_query(F.data == "shopping")
+@router.callback_query(F.data == "back_to_cities")
 async def back_to_cities(callback: CallbackQuery, state: FSMContext):
     await start_shopping(callback, state)
 
