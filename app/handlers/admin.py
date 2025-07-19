@@ -416,7 +416,10 @@ async def remove_product_prompt(message: Message, state: FSMContext):
     if not products:
         await message.answer("⚠️ No products found.")
         return
-    msg = "📋 Enter product ID to remove:\n" + "\n".join(f"{p.id}. {p.name}" for p in products)
+    for p in products:
+        city = db.query(City).filter_by(id=p.city_id).first() if p else None
+        city_label = city.name if city else "Unknown"
+        msg = "📋 Enter product ID to remove:\n" + "\n".join(f"{p.id}. {p.name} (City: {city_label})")
     await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="❌ Cancel")]],
         resize_keyboard=True
@@ -448,7 +451,11 @@ async def remove_area_prompt(message: Message, state: FSMContext):
     if not areas:
         await message.answer("⚠️ No areas found.")
         return
-    msg = "📋 Enter area ID to remove:\n" + "\n".join(f"{a.id}. {a.name}" for a in areas)
+    for a in areas:
+        product = db.query(Product).filter_by(id=a.product_id).first() if a else None
+        city = db.query(City).filter_by(id=product.city_id).first() if product else None
+        city_label = city.name if city else "Unknown"
+        msg = "📋 Enter area ID to remove:\n" + "\n".join(f"{a.id}. {a.name} (City: {city_label})")
     await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="❌ Cancel")]],
         resize_keyboard=True
