@@ -483,8 +483,11 @@ async def remove_amount_prompt(message: Message, state: FSMContext):
     msg = "📋 Enter amount ID to remove:\n"
     for a in amounts:
         area = db.query(Area).filter_by(id=a.area_id).first()
+        product = db.query(Product).filter_by(id=area.product_id).first() if area else None
+        city = db.query(City).filter_by(id=product.city_id).first() if product else None
         area_name = area.name if area else "Unknown"
-        msg += f"{a.id}. {a.price}€ (Area: {a.area_id}.{area_name} City ID:{area.city_id})\n"
+        city_label = city.name if city else "Unknown"
+        msg += f"{a.id}. {a.price}€ (Location: {area_name}, {city_label})\n"
     await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="❌ Cancel")]],
         resize_keyboard=True
