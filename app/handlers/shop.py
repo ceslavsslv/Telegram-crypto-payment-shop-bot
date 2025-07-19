@@ -16,7 +16,7 @@ def create_inline_keyboard(buttons):
         [InlineKeyboardButton(text=btn['label'], callback_data=btn['data'])] for btn in buttons
     ])
 
-@router.message(F.text.in_(get_menu_button_values("shopping")))
+@router.callback_query(F.text.in_(get_menu_button_values("shopping")))
 async def start_shopping(source: Union[Message, CallbackQuery], state: FSMContext):
     with get_session() as db:
         cities = db.query(City).filter_by(is_active=True).all()
@@ -43,7 +43,6 @@ async def start_shopping(source: Union[Message, CallbackQuery], state: FSMContex
 
 @router.callback_query(F.data == "back_to_cities")
 async def back_to_cities(callback: CallbackQuery, state: FSMContext):
-    await callback.message.delete()
     await start_shopping(callback, state)
 
 @router.callback_query(F.data.startswith("city:"))
