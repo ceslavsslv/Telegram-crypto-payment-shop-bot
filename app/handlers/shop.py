@@ -7,6 +7,7 @@ from app.keyboards.common import get_menu_button_values
 from app.models import City, Product, Area, Amount
 from app.states.shop import ShopState
 from app.utils.texts import t
+from typing import Union
 
 router = Router()
 
@@ -18,19 +19,33 @@ def create_inline_keyboard(buttons):
 #new
 
 @router.message(F.text.in_(get_menu_button_values("shopping")))
-async def start_shopping(message: Message, state: FSMContext):
+async def start_shopping(source: Union[Message, CallbackQuery], state: FSMContext):
     with get_session() as db:
         cities = db.query(City).filter_by(is_active=True).all()
     if not cities:
-        await message.answer(t("NO_CITIES", message))
+        text = t("NO_CITIES", source)
+        if isinstance(source, CallbackQuery):
+            await source.message.edit_text(text)
+        else:
+            await source.answer(text)
         return
     buttons = [{"label": city.name, "data": f"city:{city.id}"} for city in cities]
+    markup = create_inline_keyboard(buttons)
     await state.set_state(ShopState.city)
-    await message.answer(t("CHOOSE_CITY", message), reply_markup=create_inline_keyboard(buttons))
+    text = t("CHOOSE_CITY", source)
+    if isinstance(source, CallbackQuery):
+        try:
+            await source.message.edit_text(text, reply_markup=markup)
+        except Exception:
+            await source.message.delete()
+            await source.message.answer(text, reply_markup=markup)
+        await source.answer()
+    else:
+        await source.answer(text, reply_markup=markup)
 
 @router.callback_query(F.data == "back_to_cities")
 async def back_to_cities(callback: CallbackQuery, state: FSMContext):
-    await start_shopping(callback.message, state)
+    await start_shopping(callback, state)
 
 @router.callback_query(F.data.startswith("city:"))
 async def choose_city(callback: CallbackQuery, state: FSMContext):
