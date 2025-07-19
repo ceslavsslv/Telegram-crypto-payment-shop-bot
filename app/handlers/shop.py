@@ -81,7 +81,7 @@ async def choose_product(callback: CallbackQuery, state: FSMContext):
     if not areas:
         await callback.message.edit_text(t("NO_AREAS", callback), reply_markup=create_inline_keyboard([
             {"label": t("BACK", callback), "data": "back_to_products"},
-            {"label": t("MAIN_MENU", callback), "data": "shopping"}
+            {"label": t("MAIN_MENU", callback), "data": "back_to_cities"}
         ]))
         return
     await state.update_data(product_id=product_id)
@@ -101,7 +101,7 @@ async def choose_area(callback: CallbackQuery, state: FSMContext):
             await callback.message.edit_text(t("AREA_NOT_FOUND", callback),
                                              reply_markup=create_inline_keyboard([
                                                 {"label": t("BACK", callback), "data": "back_to_products"},
-                                                {"label": t("MAIN_MENU", callback), "data": "shopping"}
+                                                {"label": t("MAIN_MENU", callback), "data": "back_to_cities"}
                                             ])
                                         )
             return
@@ -109,7 +109,7 @@ async def choose_area(callback: CallbackQuery, state: FSMContext):
     if not amounts:
         await callback.message.edit_text(t("NO_AMOUNTS", callback), reply_markup=create_inline_keyboard([
                 {"label": t("BACK", callback), "data": "back_to_areas"},
-                {"label": t("MAIN_MENU", callback), "data": "shopping"}
+                {"label": t("MAIN_MENU", callback), "data": "back_to_cities"}
             ])
         )
         return
