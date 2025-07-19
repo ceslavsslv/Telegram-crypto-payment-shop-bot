@@ -626,7 +626,14 @@ async def admin_start_delivery_note(message: Message, state: FSMContext):
     if not amounts:
         await message.answer("⚠️ No amounts available.")
         return
-    msg = "📝 Select amount to edit its delivery note:\n" + "\n".join(f"{a.id}. {a.label} ({a.price}€) – Area ID: {a.area_id}" for a in amounts)
+    msg = "📝 Select amount to edit its delivery note:\n"
+    for a in amounts:
+        area = db.query(Area).filter_by(id=a.area_id).first()
+        product = db.query(Product).filter_by(id=area.product_id).first() if area else None
+        city = db.query(City).filter_by(id=product.city_id).first() if product else None
+        area_name = area.name if area else "Unknown"
+        city_label = city.name if city else "Unknown"
+        msg += f"{a.id}. {a.label} ({a.price}€) – (Area: {area_name}, {city_label})\n"
     await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="❌ Cancel")]], resize_keyboard=True
     ))
@@ -681,9 +688,14 @@ async def admin_start_removal(message: Message, state: FSMContext):
     if not amounts:
         await message.answer("⚠️ No amounts available.")
         return
-    msg = "♻️ Select amount to remove a field:\n" + "\n".join(
-        f"{a.id}. {a.label} ({a.price}€) – Area ID: {a.area_id}" for a in amounts
-    )
+    msg = "♻️ Select amount to remove a field:\n"
+    for a in amounts:
+        area = db.query(Area).filter_by(id=a.area_id).first()
+        product = db.query(Product).filter_by(id=area.product_id).first() if area else None
+        city = db.query(City).filter_by(id=product.city_id).first() if product else None
+        area_name = area.name if area else "Unknown"
+        city_label = city.name if city else "Unknown"
+        msg += f"{a.id}. {a.label} ({a.price}€) – (Area: {area_name}, {city_label})\n"
     await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="❌ Cancel")]], resize_keyboard=True
     ))
