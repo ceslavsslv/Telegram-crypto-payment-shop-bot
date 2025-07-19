@@ -7,7 +7,6 @@ from app.keyboards.common import get_menu_button_values
 from app.models import City, Product, Area, Amount
 from app.states.shop import ShopState
 from app.utils.texts import t
-from typing import Union
 
 router = Router()
 
@@ -17,8 +16,14 @@ def create_inline_keyboard(buttons):
     ])
 
 @router.message(F.text.in_(get_menu_button_values("shopping")))
-async def shopping_text(callback: CallbackQuery, state: FSMContext):
-    await start_shopping(callback, state)
+async def shopping_text(message: Message, state: FSMContext):
+    class FakeCallback:
+        def __init__(self, message):
+            self.message = message
+        async def answer(self):
+            pass
+    fake_cb = FakeCallback(message)
+    await start_shopping(fake_cb, state)
 
 @router.callback_query(F.data == "shopping")
 async def start_shopping(callback: CallbackQuery, state: FSMContext): 
