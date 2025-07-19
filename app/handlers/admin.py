@@ -477,13 +477,14 @@ async def remove_area_execute(message: Message, state: FSMContext):
 async def remove_amount_prompt(message: Message, state: FSMContext):
     with get_session() as db:
         amounts = db.query(Amount).all()
-        area = db.query(Area).all()
     if not amounts:
         await message.answer("⚠️ No amounts found.")
         return
-    msg = "📋 Enter amount ID to remove:\n" + "\n".join(
-        f"{a.id}. {a.price}€ (Area ID: {a.area_id}. {area.name})" for a in amounts
-    )
+    msg = "📋 Enter amount ID to remove:\n"
+    for a in amounts:
+        area = db.query(Area).filter_by(id=a.area_id).first()
+        area_name = area.name if area else "Unknown"
+        msg += f"{a.id}. {a.price}€ (Area ID: {a.area_id}. {area_name})\n"
     await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="❌ Cancel")]],
         resize_keyboard=True
