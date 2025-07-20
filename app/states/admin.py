@@ -42,3 +42,7 @@ class AdminState(StatesGroup):
     edit_amount_remove_choice = State()
     edit_amount_description_write = State()
     edit_purchase_note = State()
+    save_delivery_location = State()
+    ask_add_another_item = State()
+    confirm_view_purchases = State()
+    enter_announcement = State()

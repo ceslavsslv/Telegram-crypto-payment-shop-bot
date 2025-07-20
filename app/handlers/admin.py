@@ -1,16 +1,18 @@
 # handlers/admin.py
 import re
 from aiogram import Router, types, F, Bot
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command, Filter
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.states.admin import AdminState
 from app.config import ADMINS
 from app.database import engine, get_session
-from app.models import Base, City, Product, Area, Amount, User, Purchase
+from app.models import Base, City, Product, Area, Amount, User, Purchase, StockItem
 from app.keyboards.admin_menu import get_admin_keyboard
+from sqlalchemy import func
+
 
 class IsAdmin(Filter):
     async def __call__(self, message: Message) -> bool:
@@ -324,52 +326,132 @@ async def lookup_user_data(message: Message, state: FSMContext):
     try:
         user_id = int(message.text.strip())
     except ValueError:
-        await message.answer("❌ Invalid User ID.")
+        await message.answer("❌ Invalid User ID. Please enter a numeric Telegram ID.")
         return
     with get_session() as db:
         user = db.query(User).filter_by(telegram_id=user_id).first()
         if not user:
             await message.answer("❌ User not found.")
-        else:
-            purchases = db.query(Purchase).filter_by(user_id=user.id).count()
-            await message.answer(
-                f"👤 User ID: {user.telegram_id}\nBalance: ${user.balance:.2f}\nLanguage: {user.language}\nPurchases: {purchases}"
-            )
-    await state.set_state(AdminState.choose_action)
+            return
+        msg = f"👤 User ID: <code>{user.id}</code>\n"
+        msg += f"💰 Balance: {user.balance:.2f}€\n"
+        msg += f"🕐 Registered: {user.created_at.strftime('%Y-%m-%d')}"
+        keyboard = ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text="📊 View Purchases"), KeyboardButton(text="💳 Edit Balance")],
+                [KeyboardButton(text="✅ Done")]
+            ], resize_keyboard=True
+        )
+        await state.update_data(user_id=user.id)
+        await message.answer(msg, parse_mode="HTML", reply_markup=keyboard)
+        await state.set_state(AdminState.confirm_view_purchases)
+        
+@router.message(AdminState.confirm_view_purchases)
+async def admin_view_user_purchases_by_state(message: Message, state: FSMContext):
+    text = message.text.strip()
+    if text == "✅ Done":
+        await state.clear()
+        await message.answer("✅ Back to admin menu.", reply_markup=get_admin_keyboard())
+        await state.set_state(AdminState.choose_action)
+        return
+    if text == "📊 View Purchases":
+        data = await state.get_data()
+        user_id = data.get("user_id")
+        if not user_id:
+            await message.answer("⚠️ No user selected.")
+            return
+        with get_session() as db:
+            purchases = db.query(Purchase).options(joinedload(Purchase.amount)).filter_by(user_id=user_id).order_by(Purchase.timestamp.desc()).limit(10).all()
+            total_spent = db.query(func.sum(Amount.price)).join(Purchase).filter(Purchase.user_id == user_id).scalar() or 0.0
+            if not purchases:
+                await message.answer("ℹ️ This user has no purchases.")
+            else:
+                msg = f"📦 Last purchases for user {user_id}:\n"
+                for p in purchases:
+                    area = db.query(Area).filter_by(id=p.amount.area_id).first()
+                    product = db.query(Product).filter_by(id=area.product_id).first() if area else None
+                    city = db.query(City).filter_by(id=product.city_id).first() if product else None
+                    city_name = city.name if city else "Unknown"
+                    msg += f"\n🛒 <b>{p.amount.label}</b> - {p.amount.price}€\n📍 {area.name}, {city_name}\n🕐 {p.timestamp.strftime('%Y-%m-%d %H:%M')}\n"
+                msg += f"\n💸 <b>Total Spent:</b> {total_spent:.2f}€"
+                await message.answer(msg, parse_mode="HTML")
+        return
+    if text == "💳 Edit Balance":
+        msg = "Enter User ID to change balance:"
+        await message.answer(msg, reply_markup=ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="❌ Cancel")]],
+        resize_keyboard=True))
+        await state.set_state(AdminState.balance_user_id)
+        return
+    await message.answer("❌ Invalid option. Please choose a button.")
 
 @router.message(AdminState.choose_action, F.text == "📦 View Stock")
 async def view_stock_summary(message: Message, state: FSMContext):
     with get_session() as db:
-        cities = db.query(City).filter_by(is_active=True).all()
-        if not cities:
-            await message.answer("❌ No cities found.")
+        results = (
+            db.query(StockItem.amount_id, func.count(StockItem.id))
+            .group_by(StockItem.amount_id)
+            .all()
+        )
+        if not results:
+            await message.answer("📦 No stock items available.")
             return
-
-        result = "📦 <b>Stock Overview</b>\n\n"
-        for city in cities:
-            result += f"🏙 <b>{city.name}</b>\n"
-            for product in city.products:
-                result += f"  └ 📦 <b>{product.name}</b>\n"
-                for area in product.areas:
-                    result += f"     └ 🌍 {area.name}\n"
-                    for amt in area.amounts:
-                        status = "✅" if amt.stock > 0 else "❌"
-                        result += f"        └ {status} {amt.label}: {amt.stock} pcs - {amt.price}€\n"
-            result += "\n"
-
-    await message.answer(result or "❌ Nothing found.", parse_mode="HTML")
+        stock_data = {}
+        for amount_id, count in results:
+            amount = db.query(Amount).filter_by(id=amount_id).first()
+            if not amount:
+                continue
+            area = db.query(Area).filter_by(id=amount.area_id).first()
+            if not area:
+                continue
+            product = db.query(Product).filter_by(id=area.product_id).first()
+            if not product:
+                continue
+            city = db.query(City).filter_by(id=product.city_id).first()
+            if not city:
+                continue
+            city_name = city.name
+            area_name = area.name
+            amount_label = amount.label
+            stock_data.setdefault(city_name, {})
+            stock_data[city_name].setdefault(area_name, {})
+            stock_data[city_name][area_name][amount_label] = count
+        text = "📦 Available Stock:\n"
+        for city, areas in stock_data.items():
+            text += f"\n🏙 City: {city}\n"
+            for area, amounts in areas.items():
+                text += f"  🌍 Area: {area}\n"
+                for amount_label, count in amounts.items():
+                    text += f"    📏 {amount_label}: {count} item(s)\n"
+        await message.answer(text)
     await state.set_state(AdminState.choose_action)
 
 @router.message(AdminState.choose_action, F.text == "📊 Bot Stats")
 async def show_bot_stats(message: Message, state: FSMContext):
     with get_session() as db:
-        users = db.query(User).count()
-        purchases = db.query(Purchase).count()
-        total_sales = sum(p.product.price for p in db.query(Purchase).all() if p.product)
-        products = db.query(Product).count()
-    await message.answer(
-        f"📊 Stats:\n\n👥 Users: {users}\n🛍 Purchases: {purchases}\n📦 Products: {products}\n💵 Revenue: €{total_sales:.2f}"
-    )
+        total_purchases = db.query(func.count(Purchase.id)).scalar() or 0
+        total_revenue = db.query(func.sum(Purchase.total_price)).scalar() or 0.0
+        total_users = db.query(func.count(User.id)).scalar() or 0
+        total_products = db.query(func.count(Product.id)).scalar() or 0
+        top_amounts = (
+            db.query(Purchase.amount_id, func.count(Purchase.id).label("cnt"))
+            .group_by(Purchase.amount_id)
+            .order_by(func.count(Purchase.id).desc())
+            .limit(5)
+            .all()
+        )
+        response = f"📊 <b>Bot Statistics</b>\n"
+        response += f"🧾 Total purchases: <b>{total_purchases}</b>\n"
+        response += f"💶 Total revenue: <b>{total_revenue:.2f}€</b>\n"
+        response += f"👤 Total users: <b>{total_users}</b>\n"
+        response += f"📦 Total products: <b>{total_products}</b>\n"
+        if top_amounts:
+            response += "\n🏆 <b>Top Purchased Amounts:</b>\n"
+            for amount_id, count in top_amounts:
+                amount = db.query(Amount).filter_by(id=amount_id).first()
+                label = amount.label if amount else f"ID {amount_id}"
+                response += f"• {label}: {count}x\n"
+    await message.answer(response, parse_mode="HTML")
     await state.set_state(AdminState.choose_action)
 
 @router.message(AdminState.choose_action, F.text == "🗑 Remove City")
@@ -614,7 +696,7 @@ async def admin_save_description(message: Message, state: FSMContext):
     await message.answer("✅ Description updated.", reply_markup=get_admin_keyboard())
     await state.set_state(AdminState.choose_action)
 
-@router.message(AdminState.choose_action, F.text == "📝 Set Delivery Note")
+@router.message(AdminState.choose_action, F.text == "📝 Add stock")
 async def admin_start_delivery_note(message: Message, state: FSMContext):
     with get_session() as db:
         amounts = db.query(Amount).all()
@@ -653,28 +735,67 @@ async def admin_collect_delivery_photo(message: Message, state: FSMContext):
     photos = data.get("photos", [])
     photos.append(message.photo[-1].file_id)
     await state.update_data(photos=photos)
-    await message.answer("📎 Photo saved. Send more or type your note or press ✅ Done.")
+    await message.answer("📎 Photo saved. Send more or press ✅ Done.")
 
 @router.message(AdminState.edit_delivery_step, F.text == "✅ Done")
 async def admin_finish_delivery_note(message: Message, state: FSMContext):
-    await message.answer("📝 Now enter delivery note (location, info, etc.):")
+    data = await state.get_data()
+    if not data.get("photos"):
+        await message.answer("⚠️ Please send at least one photo before continuing.")
+        return
+    await message.answer("📝 Now enter delivery note (description, instructions, etc.):")
     await state.set_state(AdminState.save_delivery_note)
 
 @router.message(AdminState.save_delivery_note)
 async def admin_save_delivery_note(message: Message, state: FSMContext):
     note = message.text.strip()
+    if not note:
+        await message.answer("⚠️ Note cannot be empty. Please enter it:")
+        return
+    await state.update_data(note=note)
+    await message.answer("📍 Now enter delivery location (or type - to leave empty):")
+    await state.set_state(AdminState.save_delivery_location)
+
+@router.message(AdminState.save_delivery_location)
+async def admin_save_delivery_location(message: Message, state: FSMContext):
+    location = message.text.strip()
+    if not location:
+        await message.answer("⚠️ Location cannot be empty. Please enter it:")
+        return
     data = await state.get_data()
-    amount_id = data.get("amount_id")
+    note = data.get("note")
     photos = data.get("photos", [])
+    amount_id = data.get("amount_id")
+    if not (amount_id and photos and note and location):
+        await message.answer("❌ Missing required data to save item.")
+        return
     with get_session() as db:
-        amount = db.query(Amount).filter_by(id=amount_id).first()
-        if amount:
-            amount.purchase_note = note
-            amount.delivery_photos = ",".join(photos)
-            db.commit()
-    await state.clear()
-    await message.answer("✅ Delivery note and photos saved.", reply_markup=get_admin_keyboard())
-    await state.set_state(AdminState.choose_action)
+        stock_item = StockItem(
+            amount_id=amount_id,
+            note=note,
+            location=location,
+            photos=",".join(photos)
+        )
+        db.add(stock_item)
+        db.commit()
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="➕ Add Another Item"), KeyboardButton(text="✅ Done")]], resize_keyboard=True
+    )
+    await message.answer("✅ Stock item saved. Add another or finish?", reply_markup=keyboard)
+    await state.set_state(AdminState.ask_add_another_item)
+
+@router.message(AdminState.ask_add_another_item)
+async def admin_handle_add_another_item(message: Message, state: FSMContext):
+    if message.text == "➕ Add Another Item":
+        await state.update_data(photos=[])
+        await message.answer("📸 Send one or more delivery photos for the item. When done, send ✅ Done.", reply_markup=ReplyKeyboardMarkup(
+            keyboard=[[KeyboardButton(text="✅ Done"), KeyboardButton(text="❌ Cancel")]], resize_keyboard=True
+        ))
+        await state.set_state(AdminState.edit_delivery_step)
+    else:
+        await message.answer("✅ All stock items saved.", reply_markup=get_admin_keyboard())
+        await state.clear()
+        await state.set_state(AdminState.choose_action)   
 
 @router.message(AdminState.choose_action, F.text == "♻️ Remove Image/Note")
 async def admin_start_removal(message: Message, state: FSMContext):
@@ -707,8 +828,7 @@ async def admin_choose_removal_field(message: Message, state: FSMContext):
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="🖼 Image"), KeyboardButton(text="✏️ Description")],
-            [KeyboardButton(text="📸 Delivery Photos"), KeyboardButton(text="📄 Delivery Note")],
-            [KeyboardButton(text="📍 Location"), KeyboardButton(text="🧹 All")],
+            [KeyboardButton(text="♻️ Remove Stock Item")],
             [KeyboardButton(text="❌ Cancel")]
         ], resize_keyboard=True
     )
@@ -725,54 +845,115 @@ async def admin_execute_removal_choice(message: Message, state: FSMContext):
         if not amount:
             await message.answer("⚠️ Amount not found.")
             return
-        fields = []
         if choice == "🖼 Image":
             amount.image_file_id = None
-            fields.append("image")
+            db.commit()
+            await message.answer("✅ Removed image.", reply_markup=get_admin_keyboard())
         elif choice == "✏️ Description":
             amount.description = ""
-            fields.append("description")
-        elif choice == "📸 Delivery Photos":
-            amount.delivery_photos = None
-            fields.append("delivery photos")
-        elif choice == "📄 Delivery Note":
-            amount.delivery_note = None
-            fields.append("delivery note")
-        elif choice == "📍 Location":
-            amount.delivery_location = None
-            fields.append("location")
-        elif choice == "🧹 All":
-            amount.image_file_id = None
-            amount.description = ""
-            amount.delivery_photos = None
-            amount.purchase_note = None
-            amount.delivery_location = None
-            fields.append("all fields")
+            db.commit()
+            await message.answer("✅ Removed description.", reply_markup=get_admin_keyboard())
+        elif choice == "♻️ Remove Stock Item":
+            stock_items = db.query(StockItem).filter_by(amount_id=amount.id).all()
+            if not stock_items:
+                await message.answer("⚠️ No stock items found for this amount.")
+                return
+            for item in stock_items:
+                caption = f"🧾 <b>StockItem ID:</b> {item.id}\n"
+                caption += f"📍 Location: {item.location or 'N/A'}\n"
+                caption += f"📝 Note: {item.note or 'N/A'}\n"
+                photo_ids = item.photos.split(",") if item.photos else []
+                if photo_ids:
+                    media = [InputMediaPhoto(media=pid) for pid in photo_ids[:10]]
+                    await message.answer_media_group(media)
+                await message.answer(caption, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(
+                    inline_keyboard=[[InlineKeyboardButton(text="❌ Remove this item", callback_data=f"remove_stock_{item.id}")]]
+                ))
+            return
         else:
             await message.answer("❌ Invalid option.")
             return
+        await state.clear()
+        await state.set_state(AdminState.choose_action)
 
-        db.commit()
-        await message.answer(f"✅ Cleared: {', '.join(fields)}")
-    await state.clear()
-    await message.answer("↩️ Back to menu.", reply_markup=get_admin_keyboard())
-    await state.set_state(AdminState.choose_action)
-    try:
-        amount_id = int(message.text.strip())
-    except ValueError:
-        await message.answer("❌ Invalid amount ID.")
-        return
+@router.callback_query(F.data.startswith("remove_stock_"))
+async def admin_execute_stockitem_removal(callback: CallbackQuery, state: FSMContext):
+    stock_id = int(callback.data.split("_")[-1])
     with get_session() as db:
-        amount = db.query(Amount).filter_by(id=amount_id).first()
-        if amount:
-            amount.image_file_id = None
-            amount.description = None
-            amount.purchase_note = None
-            amount.delivery_photos = None
-            db.commit()
-            await message.answer("✅ Cleared image, description, and delivery info.")
+        item = db.query(StockItem).filter_by(id=stock_id).first()
+        if not item:
+            await callback.message.answer("❌ Stock item not found.")
         else:
-            await message.answer("⚠️ Amount not found.")
+            db.delete(item)
+            db.commit()
+            await callback.message.answer(f"✅ Stock item {stock_id} removed from inventory.")
+    await callback.answer()
     await state.clear()
-    await message.answer("↩️ Back to menu.", reply_markup=get_admin_keyboard())
+    await callback.message.answer("↩️ Back to admin menu.", reply_markup=get_admin_keyboard())
+    await state.set_state(AdminState.choose_action)
+
+@router.message(AdminState.choose_action, F.text == "📢 Announcement")
+async def admin_start_announcement(message: Message, state: FSMContext):
+    await message.answer("📨 Enter the message you want to send to all users:")
+    await state.set_state(AdminState.enter_announcement)
+
+@router.message(AdminState.enter_announcement)
+async def admin_send_announcement(message: Message, state: FSMContext):
+    text = message.text.strip()
+    if not text:
+        await message.answer("⚠️ Message cannot be empty.")
+        return
+    await message.answer("⏳ Sending announcement to all users...")
+    success = 0
+    with get_session() as db:
+        users = db.query(User).all()
+        for user in users:
+            try:
+                await message.bot.send_message(user.id, text)
+                success += 1
+            except:
+                continue
+    await message.answer(f"✅ Announcement sent to {success} users.", reply_markup=get_admin_keyboard())
+    await state.clear()
+    await state.set_state(AdminState.choose_action)
+
+@router.message(AdminState.choose_action, F.text == "📢 Announcement")
+async def admin_start_announcement(message: Message, state: FSMContext):
+    await message.answer("📨 Enter the message you want to send to all users:")
+    await state.set_state(AdminState.enter_announcement)
+
+@router.message(AdminState.enter_announcement)
+async def admin_send_announcement(message: Message, state: FSMContext):
+    text = message.text.strip()
+    if not text:
+        await message.answer("⚠️ Message cannot be empty.")
+        return
+    await message.answer("⏳ Sending announcement to all users...")
+    success = 0
+    with get_session() as db:
+        users = db.query(User).all()
+        for user in users:
+            try:
+                await message.bot.send_message(user.id, text)
+                success += 1
+            except:
+                continue
+    await message.answer(f"✅ Announcement sent to {success} users.", reply_markup=get_admin_keyboard())
+    await state.clear()
+    await state.set_state(AdminState.choose_action)
+
+@router.message(AdminState.choose_action, F.text == "👥 Referral")
+async def admin_referral_stats(message: Message, state: FSMContext):
+    with get_session() as db:
+        total_with_referrals = db.query(func.count(User.id)).filter(User.referred_by != None).scalar()
+        top_referrers = db.query(User.referred_by, func.count(User.id).label("count"))\
+            .filter(User.referred_by != None)\
+            .group_by(User.referred_by)\
+            .order_by(func.count(User.id).desc())\
+            .limit(10).all()
+        msg = f"👥 Total referred users: {total_with_referrals}\n\n"
+        msg += "🏆 Top Referrers:\n"
+        for ref in top_referrers:
+            msg += f"🔗 User ID: <code>{ref.referred_by}</code> — {ref.count} referrals\n"
+        await message.answer(msg, parse_mode="HTML")
     await state.set_state(AdminState.choose_action)

@@ -8,10 +8,10 @@ def get_admin_keyboard():
         ["➕ Add Area", "🗑 Remove Area"],
         ["➕ Add Amount", "🗑 Remove Amount"],
         ["🖼 Set Amount Image", "✏️ Set Amount Description"],
-        ["📝 Set Delivery Note", "♻️ Remove Image/Note"],
+        ["📝 Add stock", "♻️ Remove Image/Note"],
         ["📝 Edit Purchase Info", "📦 View Stock"],
-        ["💰 Edit Balance"],
-        ["🔍 Lookup User", "📊 Bot Stats"],
+        ["💰 Edit Balance", "🔍 Lookup User"],
+        ["📊 Bot Stats", "📢 Announcement"],
         ["⬅️ Exit Admin"]
     ]
     return ReplyKeyboardMarkup(
