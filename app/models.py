@@ -69,12 +69,12 @@ class Purchase(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     amount_id = Column(Integer, ForeignKey("amounts.id"))
+    product_id = Column(Integer, ForeignKey("products.id"))
     timestamp = Column(DateTime, default=func.now())
     delivery_note = Column(String, nullable=True)
     delivery_location = Column(String, nullable=True)
     delivery_photos = Column(String, nullable=True)
     total_price = Column(Float, nullable=False)
-
 
     user = relationship("User", back_populates="purchases")
     product = relationship("Product")
