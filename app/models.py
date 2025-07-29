@@ -84,7 +84,7 @@ class StockItem(Base):
     __tablename__ = "stock_items"
 
     id = Column(Integer, primary_key=True)
-    amount_id = Column(Integer, ForeignKey("amount.id"))
+    amount_id = Column(Integer, ForeignKey("amounts.id"))
     note = Column(Text)
     photos = Column(Text)
     location = Column(Text)
