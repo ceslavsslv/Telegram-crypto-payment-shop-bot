@@ -1,6 +1,6 @@
 # handlers/shop.py
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Union
 from aiogram.fsm.context import FSMContext
 from app.database import get_session
 from app.keyboards.common import get_menu_button_values
@@ -20,24 +20,30 @@ async def shopping_text(message: Message, state: FSMContext):
     await start_shopping(message, state)
 
 @router.callback_query(F.data == "shopping")
-async def start_shopping(callback: CallbackQuery, state: FSMContext): 
+async def start_shopping(event: Union[CallbackQuery, Message], state: FSMContext):
     with get_session() as db:
         cities = db.query(City).filter_by(is_active=True).all()
+
     if not cities:
-        text = t("NO_CITIES", callback)
-        if isinstance(callback, CallbackQuery):
-            await callback.message.edit_text(text)
-        elif isinstance(callback, Message):
-            await callback.answer(text)
+        text = t("NO_CITIES", event)
+        if isinstance(event, CallbackQuery):
+            await event.message.edit_text(text)
+        else:
+            await event.answer(text)
         return
     buttons = [{"label": city.name, "data": f"city:{city.id}"} for city in cities]
     await state.set_state(ShopState.city)
-    try:
-        await callback.message.edit_text(t("CHOOSE_CITY", callback), reply_markup=create_inline_keyboard(buttons))
-    except Exception:
-        await callback.message.delete()
-        await callback.message.answer(t("CHOOSE_CITY", callback), reply_markup=create_inline_keyboard(buttons))
-    await callback.answer()
+
+    if isinstance(event, CallbackQuery):
+        await event.message.edit_text(
+            t("CHOOSE_CITY", event),
+            reply_markup=create_inline_keyboard(buttons)
+        )
+    else:
+        await event.answer(
+            t("CHOOSE_CITY", event),
+            reply_markup=create_inline_keyboard(buttons)
+        )
 
 @router.callback_query(F.data == "back_to_cities")
 async def back_to_cities(callback: CallbackQuery, state: FSMContext):
