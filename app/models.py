@@ -62,6 +62,7 @@ class Amount(Base):
     description = Column(Text, default="")
 
     area = relationship("Area", back_populates="amounts")
+    stock_items = relationship("StockItem", back_populates="amount")
     
 class Purchase(Base):
     __tablename__ = "purchases"
