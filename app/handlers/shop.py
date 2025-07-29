@@ -17,21 +17,18 @@ def create_inline_keyboard(buttons):
 
 @router.message(F.text.in_(get_menu_button_values("shopping")))
 async def shopping_text(message: Message, state: FSMContext):
-    class FakeCallback:
-        def __init__(self, message):
-            self.message = message
-            self.from_user = message.from_user
-        async def answer(self):
-            pass
-    fake_cb = FakeCallback(message)
-    await start_shopping(fake_cb, state)
+    await start_shopping(message, state)
 
 @router.callback_query(F.data == "shopping")
 async def start_shopping(callback: CallbackQuery, state: FSMContext): 
     with get_session() as db:
         cities = db.query(City).filter_by(is_active=True).all()
     if not cities:
-        await callback.message.edit_text(t("NO_CITIES", callback))
+        text = t("NO_CITIES", callback)
+        if isinstance(callback, CallbackQuery):
+            await callback.message.edit_text(text)
+        elif isinstance(callback, Message):
+            await callback.answer(text)
         return
     buttons = [{"label": city.name, "data": f"city:{city.id}"} for city in cities]
     await state.set_state(ShopState.city)
