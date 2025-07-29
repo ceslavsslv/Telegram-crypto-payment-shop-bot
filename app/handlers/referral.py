@@ -1,5 +1,5 @@
 from aiogram import Router, types, F
-from app.keyboards.common import get_menu_button_values, get_menu_keyboard
+from app.keyboards.common import get_menu_button_values
 from app.database import get_db
 from app.utils.helpers import get_or_create_user
 from app.models import User, Purchase
